@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@supabase/supabase-js";
+
+import { supabasePublishableKey, supabaseUrl } from "@/lib/supabase/env";
 
 /**
  * Daily keep-alive for the Supabase free tier, which pauses a project after
@@ -26,7 +28,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { error } = await createAdminClient()
+  // The publishable key, not the secret one: site_settings is world-readable,
+  // so this needs no privilege and the secret key keeps its single documented
+  // pre-authentication use (the login allowlist check).
+  const { error } = await createClient(supabaseUrl(), supabasePublishableKey(), {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
     .from("site_settings")
     .select("id")
     .eq("id", 1)

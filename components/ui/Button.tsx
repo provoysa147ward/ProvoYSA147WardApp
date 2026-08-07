@@ -23,11 +23,19 @@ function buttonClasses(variant: ButtonVariant = "primary") {
 export function Button({
   variant = "primary",
   className = "",
+  // HTML defaults a button inside a form to type="submit". Defaulting to
+  // "button" here means adding an onClick handler cannot accidentally submit
+  // the form around it; submit buttons pass type="submit" explicitly.
+  type = "button",
   children,
   ...props
 }: ComponentProps<"button"> & { variant?: ButtonVariant }) {
   return (
-    <button className={`${buttonClasses(variant)} ${className}`} {...props}>
+    <button
+      type={type}
+      className={`${buttonClasses(variant)} ${className}`}
+      {...props}
+    >
       {children}
     </button>
   );

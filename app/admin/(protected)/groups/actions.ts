@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { fieldErrors, guardMessage } from "@/lib/adminActionSupport";
+import { guardMessage } from "@/lib/adminActionSupport";
+import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
 import { groupSchema } from "@/lib/validation/admin";
 
@@ -70,16 +71,19 @@ export async function saveGroup(
 
   const raw = readGroupForm(formData);
 
-  const photo = await uploadPhoto(formData.get("photo") as File | null);
-  if (photo && "error" in photo) {
-    return { status: "error", errors: {}, formError: photo.error };
-  }
-  if (photo) raw.photoUrl = photo.url;
-
+  // Validate first. Uploading before this would leave an orphaned object in the
+  // bucket every time a submission is rejected.
   const parsed = groupSchema.safeParse(raw);
   if (!parsed.success) {
     return { status: "error", errors: fieldErrors(parsed.error.issues) };
   }
+
+  const chosen = formData.get("photo");
+  const photo = await uploadPhoto(chosen instanceof File ? chosen : null);
+  if (photo && "error" in photo) {
+    return { status: "error", errors: {}, formError: photo.error };
+  }
+  if (photo) parsed.data.photoUrl = photo.url;
 
   const row = {
     name: parsed.data.name,

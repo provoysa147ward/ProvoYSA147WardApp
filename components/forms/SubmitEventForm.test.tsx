@@ -8,13 +8,12 @@ import {
 } from "@/app/submit/submit-state";
 import { wardToday } from "@/lib/date";
 
-// The form imports a server action; the component tests exercise the markup and
-// interaction, and the action's own behaviour is covered in its unit tests.
+// The form imports a server action. Replace the module outright rather than
+// spreading the original: `actions.ts` pulls in `server-only`, which throws the
+// moment it is loaded in this jsdom environment. The action's own behaviour is
+// covered by the DB and E2E suites.
 const submitEvent = vi.hoisted(() => vi.fn());
-vi.mock("@/app/submit/actions", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/app/submit/actions")>();
-  return { ...actual, submitEvent };
-});
+vi.mock("@/app/submit/actions", () => ({ submitEvent }));
 
 let currentState: SubmitState = INITIAL_SUBMIT_STATE;
 const formAction = vi.hoisted(() => vi.fn());

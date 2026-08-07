@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
-import { fieldErrors, guardMessage } from "@/lib/adminActionSupport";
+import { guardMessage } from "@/lib/adminActionSupport";
+import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
 import { quickLinkSchema, siteSettingsSchema } from "@/lib/validation/admin";
 

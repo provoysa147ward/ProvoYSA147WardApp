@@ -121,9 +121,14 @@ export function buildEventBody(event: GoogleEventInput) {
     : event.eventDate;
 
   const start = `${event.eventDate}T${normalizeTime(event.startTime)}`;
+  const fallback = addMinutesAcrossDays(
+    event.eventDate,
+    event.startTime,
+    DEFAULT_DURATION_MINUTES,
+  );
   const end = event.endTime
     ? `${endDate}T${normalizeTime(event.endTime)}`
-    : `${event.eventDate}T${addMinutes(event.startTime, DEFAULT_DURATION_MINUTES)}`;
+    : `${fallback.date}T${fallback.time}`;
 
   return {
     id: googleEventId(event.id),
@@ -142,12 +147,30 @@ function normalizeTime(time: IsoTime): string {
   return time.length === 5 ? `${time}:00` : time;
 }
 
-function addMinutes(time: IsoTime, minutes: number): string {
-  const [hours, mins] = time.split(":").map(Number);
-  const total = (hours * 60 + mins + minutes) % (24 * 60);
-  const h = String(Math.floor(total / 60)).padStart(2, "0");
-  const m = String(total % 60).padStart(2, "0");
-  return `${h}:${m}:00`;
+/**
+ * Add minutes to a wall-clock time, carrying into the next day when it wraps.
+ *
+ * The carry is the whole point: a 10:30 PM event with no end time would
+ * otherwise get a 12:30 AM end on the *same* date, which is before its start.
+ * Google rejects that outright, and because the push then fails every time,
+ * Retry could never clear it.
+ */
+export function addMinutesAcrossDays(
+  date: IsoDate,
+  time: IsoTime,
+  minutes: number,
+): { date: IsoDate; time: string } {
+  const { hours, mins } = { hours: Number(time.slice(0, 2)), mins: Number(time.slice(3, 5)) };
+  const total = hours * 60 + mins + minutes;
+  const dayOffset = Math.floor(total / (24 * 60));
+  const within = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+
+  return {
+    date: addCalendarDays(date, dayOffset),
+    time: `${String(Math.floor(within / 60)).padStart(2, "0")}:${String(
+      within % 60,
+    ).padStart(2, "0")}:00`,
+  };
 }
 
 function describeError(error: unknown): string {

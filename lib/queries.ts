@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient } from "@/lib/supabase/server";
 import { isEventCategory, DEFAULT_CATEGORY } from "@/lib/categories";
 import type { WardEvent } from "@/lib/events";
@@ -33,12 +35,14 @@ export interface Group {
   photoUrl: string | null;
   meetingInfo: string;
   groupmeUrl: string | null;
+  sortOrder: number;
 }
 
 export interface QuickLink {
   id: string;
   label: string;
   url: string;
+  sortOrder: number;
 }
 
 export interface SiteSettings {
@@ -98,7 +102,9 @@ export async function getGroups(): Promise<Group[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("groups")
-    .select("id, name, description, emoji, photo_url, meeting_info, groupme_url")
+    .select(
+      "id, name, description, emoji, photo_url, meeting_info, groupme_url, sort_order",
+    )
     .order("sort_order", { ascending: true })
     .order("name", { ascending: true });
 
@@ -112,6 +118,7 @@ export async function getGroups(): Promise<Group[]> {
     photoUrl: row.photo_url,
     meetingInfo: row.meeting_info,
     groupmeUrl: row.groupme_url,
+    sortOrder: row.sort_order,
   }));
 }
 
@@ -119,12 +126,18 @@ export async function getQuickLinks(): Promise<QuickLink[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("quick_links")
-    .select("id, label, url")
+    .select("id, label, url, sort_order")
     .order("sort_order", { ascending: true })
     .order("label", { ascending: true });
 
   if (error) throw new Error(`Could not load quick links: ${error.message}`);
-  return data ?? [];
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    label: row.label,
+    url: row.url,
+    sortOrder: row.sort_order,
+  }));
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 
 import { formatDayLabel, formatTimeRange } from "@/lib/date";
 import type { EventOccurrence } from "@/lib/events";
@@ -27,6 +27,9 @@ export function EventDetailCard({
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Unique per instance so aria-labelledby cannot resolve to another dialog's
+  // heading — the same reason ConfirmDialog generates its own.
+  const headingId = useId();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -47,15 +50,12 @@ export function EventDetailCard({
         // the content sits inside the wrapper below.
         if (event.target === dialogRef.current) onClose();
       }}
-      aria-labelledby="event-detail-heading"
+      aria-labelledby={headingId}
       className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink backdrop:bg-ink/40"
     >
       {selection ? (
         <div className="flex flex-col gap-4 p-5">
-          <h2
-            id="event-detail-heading"
-            className="text-sm font-bold text-ink-muted"
-          >
+          <h2 id={headingId} className="text-sm font-bold text-ink-muted">
             <time dateTime={selection.date}>
               {formatDayLabel(selection.date)}
             </time>

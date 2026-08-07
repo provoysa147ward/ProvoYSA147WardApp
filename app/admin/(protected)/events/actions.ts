@@ -10,12 +10,9 @@ import {
   type GoogleEventInput,
   type SyncResult,
 } from "@/lib/google/calendar";
-import {
-  NotAdminError,
-  NotAuthenticatedError,
-  createClient,
-  requireAdmin,
-} from "@/lib/supabase/server";
+import { guardMessage } from "@/lib/adminActionSupport";
+import { fieldErrors } from "@/lib/validation/fieldErrors";
+import { createClient, requireAdmin } from "@/lib/supabase/server";
 import {
   adminEventSchema,
   toEventRow,
@@ -68,26 +65,6 @@ async function recordSync(
  * still refuse, but failing here gives a real message instead of a raw
  * database error.
  */
-
-function fieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
-  const errors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? "form");
-    errors[key] ??= issue.message;
-  }
-  return errors;
-}
-
-/** Turns the guard's errors into something an admin can act on. */
-function guardMessage(error: unknown): string {
-  if (error instanceof NotAdminError) {
-    return "Your admin access was removed. Sign in again to check.";
-  }
-  if (error instanceof NotAuthenticatedError) {
-    return "You've been signed out. Sign in again to continue.";
-  }
-  return "Something went wrong. Try again in a moment.";
-}
 
 function readEventForm(formData: FormData) {
   return {
@@ -348,8 +325,11 @@ export async function deleteEvent(
   // A failure here still lets the delete proceed, and the ward calendar keeps
   // a stale entry the admin can remove by hand — better than a row that says
   // deleted while the event is still live on the calendar.
+  // Gated on approved alone, not on sync_status === "synced": a push can have
+  // succeeded while the status write that followed it failed, and deleteEvent
+  // already treats 404/410 as success, so a redundant call costs nothing.
   let googleFailed = false;
-  if (before?.status === "approved" && before.sync_status === "synced") {
+  if (before?.status === "approved") {
     const result = await deleteGoogleEvent(id);
     googleFailed = !result.ok;
   }

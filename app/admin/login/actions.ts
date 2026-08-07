@@ -74,15 +74,20 @@ export async function requestMagicLink(
  * `redirectTo`, so a crafted form post cannot turn sign-out into an open
  * redirect.
  */
-const SIGN_OUT_DESTINATIONS: Record<string, string> = {
-  default: "/admin/login",
-  removed: "/admin/login?error=removed",
-};
+const SIGN_OUT_DESTINATIONS = new Map<string, string>([
+  ["default", "/admin/login"],
+  ["removed", "/admin/login?error=removed"],
+]);
 
 export async function signOut(formData?: FormData): Promise<never> {
   const supabase = await createClient();
   await supabase.auth.signOut();
 
+  // A Map, not an object literal: `reason=constructor` would resolve to an
+  // inherited prototype member on an object, which is truthy, so the fallback
+  // would never fire and a non-string would reach redirect().
   const reason = String(formData?.get("reason") ?? "default");
-  redirect(SIGN_OUT_DESTINATIONS[reason] ?? SIGN_OUT_DESTINATIONS.default);
+  redirect(
+    SIGN_OUT_DESTINATIONS.get(reason) ?? SIGN_OUT_DESTINATIONS.get("default")!,
+  );
 }

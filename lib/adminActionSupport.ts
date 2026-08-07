@@ -12,15 +12,3 @@ export function guardMessage(error: unknown): string {
   }
   return "Something went wrong. Try again in a moment.";
 }
-
-/** First message per field: the one the admin should fix first. */
-export function fieldErrors(
-  issues: { path: PropertyKey[]; message: string }[],
-): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? "form");
-    errors[key] ??= issue.message;
-  }
-  return errors;
-}

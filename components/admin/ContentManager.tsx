@@ -308,7 +308,7 @@ function QuickLinkForm({ link }: { link?: QuickLink }) {
                 type="number"
                 min={0}
                 max={9999}
-                defaultValue={0}
+                defaultValue={link?.sortOrder ?? 0}
                 className={inputClasses}
               />
             )}

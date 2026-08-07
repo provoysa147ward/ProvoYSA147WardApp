@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { fieldErrors, guardMessage } from "@/lib/adminActionSupport";
+import { guardMessage } from "@/lib/adminActionSupport";
+import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
 import { adminEmailSchema } from "@/lib/validation/admin";
 
@@ -83,11 +84,16 @@ export async function removeAdminEmail(
     .eq("email", email);
 
   if (error) {
+    // Only the trigger raises restrict_violation. Reporting every failure as
+    // the permanent-admin guard would tell an admin something false and stop
+    // them retrying what was really a transient error.
+    const isPermanentGuard = error.code === "23001";
     return {
       status: "error",
       errors: {},
-      formError:
-        "That address can't be removed — it's the ward's permanent admin, kept so nobody can lock everyone out.",
+      formError: isPermanentGuard
+        ? "That address can't be removed — it's the ward's permanent admin, kept so nobody can lock everyone out."
+        : `Could not remove that address: ${error.message}`,
     };
   }
 

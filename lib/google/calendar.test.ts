@@ -17,6 +17,7 @@ vi.mock("googleapis", () => ({
 vi.mock("server-only", () => ({}));
 
 const {
+  addMinutesAcrossDays,
   buildEventBody,
   buildRecurrenceRule,
   googleEventId,
@@ -125,6 +126,29 @@ describe("buildEventBody", () => {
     expect(body.end.dateTime).toBe("2026-08-10T21:00:00");
   });
 
+  it("rolls the default end onto the next day for a late-evening event", () => {
+    // Regression: a 22:30 start once produced a 00:30 end on the *same* date,
+    // which is before the start. Google rejects that, and because the push
+    // failed every time, Retry could never clear it.
+    const body = buildEventBody({
+      ...baseEvent,
+      startTime: "22:30",
+      endTime: null,
+    });
+
+    expect(body.start.dateTime).toBe("2026-08-10T22:30:00");
+    expect(body.end.dateTime).toBe("2026-08-11T00:30:00");
+    expect(body.end.dateTime > body.start.dateTime).toBe(true);
+  });
+
+  it("never emits an end at or before the start, at any start time", () => {
+    for (let hour = 0; hour < 24; hour++) {
+      const startTime = `${String(hour).padStart(2, "0")}:30`;
+      const body = buildEventBody({ ...baseEvent, startTime, endTime: null });
+      expect(body.end.dateTime > body.start.dateTime).toBe(true);
+    }
+  });
+
   it("omits recurrence for a one-off", () => {
     expect(buildEventBody(baseEvent)).not.toHaveProperty("recurrence");
   });
@@ -198,5 +222,35 @@ describe("isSyncEnabled", () => {
     process.env.GOOGLE_SA_PRIVATE_KEY = "key";
     process.env.GOOGLE_CALENDAR_ID = "ward@group.calendar.google.com";
     expect(isSyncEnabled()).toBe(true);
+  });
+});
+
+describe("addMinutesAcrossDays", () => {
+  it("stays on the same day when it does not wrap", () => {
+    expect(addMinutesAcrossDays("2026-08-10", "19:00", 120)).toEqual({
+      date: "2026-08-10",
+      time: "21:00:00",
+    });
+  });
+
+  it("carries into the next day when it wraps past midnight", () => {
+    expect(addMinutesAcrossDays("2026-08-10", "23:30", 120)).toEqual({
+      date: "2026-08-11",
+      time: "01:30:00",
+    });
+  });
+
+  it("carries across a month boundary", () => {
+    expect(addMinutesAcrossDays("2026-08-31", "23:00", 120)).toEqual({
+      date: "2026-09-01",
+      time: "01:00:00",
+    });
+  });
+
+  it("handles landing exactly on midnight", () => {
+    expect(addMinutesAcrossDays("2026-08-10", "22:00", 120)).toEqual({
+      date: "2026-08-11",
+      time: "00:00:00",
+    });
   });
 });

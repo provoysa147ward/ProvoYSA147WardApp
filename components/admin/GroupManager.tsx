@@ -161,7 +161,7 @@ function GroupForm({ group }: { group?: Group }) {
               type="number"
               min={0}
               max={9999}
-              defaultValue={0}
+              defaultValue={group?.sortOrder ?? 0}
               className={inputClasses}
             />
           )}

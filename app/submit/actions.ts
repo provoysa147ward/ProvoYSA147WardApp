@@ -2,6 +2,7 @@
 
 import { checkRateLimit } from "@vercel/firewall";
 
+import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient } from "@/lib/supabase/server";
 import {
   eventSubmissionSchema,
@@ -12,16 +13,6 @@ import type { SubmitState } from "./submit-state";
 
 /** Matches the rule that must be created once in the Vercel dashboard. */
 const RATE_LIMIT_ID = "event-submit";
-
-function fieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
-  const errors: Record<string, string> = {};
-  for (const issue of issues) {
-    const key = String(issue.path[0] ?? "form");
-    // Keep the first message per field: that's what the user should fix first.
-    errors[key] ??= issue.message;
-  }
-  return errors;
-}
 
 /**
  * Accept an event suggestion.
