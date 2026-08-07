@@ -407,7 +407,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 6: Admin event workflow
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Dashboard with pending queue (oldest first, count badge, full submission
   incl. contact) where items open into an editable form — Approve saves + approves
   atomically (`where status='pending'`), Reject sets status (hidden everywhere,
