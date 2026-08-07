@@ -425,7 +425,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 7: Admin content & access management
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Groups CRUD (emoji default, optional photo upload — bucket enforces the 2MB
   cap and mime types; no client-side compression), announcement + expiry, quick links
   (https-validated, ordered), site settings (blurb, meeting info, escape-hatch contact —

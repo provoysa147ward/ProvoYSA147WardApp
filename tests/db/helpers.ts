@@ -115,6 +115,30 @@ export async function removeAdmin(email: string) {
   await serviceClient().from("admin_emails").delete().eq("email", email);
 }
 
+/**
+ * The seeded permanent admin row.
+ *
+ * Tests use this rather than creating their own, because a permanent row is by
+ * design impossible to clean up: the trigger refuses the delete *and* refuses
+ * to clear the flag, so every run would leave one behind. Requires
+ * `supabase db reset` to have run — the message says so if it hasn't.
+ */
+export const SEEDED_PERMANENT_EMAIL = "ward-email@example.com";
+
+export async function assertSeededPermanentAdmin(): Promise<void> {
+  const { data } = await serviceClient()
+    .from("admin_emails")
+    .select("email, is_permanent")
+    .eq("email", SEEDED_PERMANENT_EMAIL)
+    .maybeSingle();
+
+  if (!data?.is_permanent) {
+    throw new Error(
+      `Expected the seeded permanent admin ${SEEDED_PERMANENT_EMAIL}. Run \`supabase db reset\` first.`,
+    );
+  }
+}
+
 /** ISO date `days` from today, for fixtures that must not be in the past. */
 export function isoDateFromToday(days: number): string {
   const date = new Date();

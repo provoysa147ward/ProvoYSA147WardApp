@@ -3,12 +3,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addAdmin,
   anonClient,
+  assertSeededPermanentAdmin,
   createUser,
   deleteEvent,
   deleteUser,
   eventFixture,
   isoDateFromToday,
   removeAdmin,
+  SEEDED_PERMANENT_EMAIL,
   seedEvent,
   serviceClient,
   type TestUser,
@@ -477,18 +479,12 @@ describe("admin_emails allowlist", () => {
 });
 
 describe("the permanent ward admin row", () => {
-  const WARD_EMAIL = "permanent-ward@example.com";
+  // The seeded row, not one created here: a permanent row cannot be cleaned up
+  // afterwards by design, so creating one per run would leave it behind.
+  const WARD_EMAIL = SEEDED_PERMANENT_EMAIL;
 
   beforeAll(async () => {
-    await addAdmin(WARD_EMAIL, true);
-  });
-
-  afterAll(async () => {
-    await serviceClient()
-      .from("admin_emails")
-      .update({ is_permanent: false })
-      .eq("email", WARD_EMAIL);
-    await removeAdmin(WARD_EMAIL);
+    await assertSeededPermanentAdmin();
   });
 
   it("cannot be deleted by an admin through the API", async () => {

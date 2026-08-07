@@ -177,11 +177,14 @@ function EditableEvent({ event }: { event: AdminEvent }) {
         <form action={updateAction} className="flex flex-col gap-4">
           <input type="hidden" name="id" value={event.id} />
           <EventFields event={event} errors={updateState.errors} />
-          <div className="flex flex-wrap items-center gap-2">
-            <SaveButton label="Save changes" />
-            <DeleteControl event={event} action={deleteAction} />
-          </div>
+          <SaveButton label="Save changes" />
         </form>
+
+        {/* Outside the form above: ConfirmDialog renders its own <form>, and a
+            form may not contain another. */}
+        <div className="mt-3">
+          <DeleteControl event={event} action={deleteAction} />
+        </div>
       </div>
     </details>
   );

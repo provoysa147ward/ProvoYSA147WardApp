@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { Button } from "./Button";
 
@@ -27,6 +27,9 @@ export function ConfirmDialog({
 }) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // A page can hold many of these (one per row), so the heading id has to be
+  // unique or every dialog's aria-labelledby resolves to the first one's title.
+  const headingId = useId();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -44,11 +47,11 @@ export function ConfirmDialog({
       <dialog
         ref={dialogRef}
         onClose={() => setOpen(false)}
-        aria-labelledby="confirm-heading"
+        aria-labelledby={headingId}
         className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink backdrop:bg-ink/40"
       >
         <div className="flex flex-col gap-4 p-5">
-          <h2 id="confirm-heading" className="text-lg font-bold">
+          <h2 id={headingId} className="text-lg font-bold">
             {title}
           </h2>
           <div className="text-sm text-ink-muted">{body}</div>
