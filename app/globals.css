@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/*
+ * Ward palette.
+ *
+ * Each category pairs a pastel background with a deep text colour of the same
+ * hue. Every pair is verified at >= 4.5:1 (WCAG AA) against its own background,
+ * so chip text stays legible without relying on colour alone — chips always
+ * render their category name too. `lib/categories.ts` maps a category to the
+ * utilities generated from these custom properties; the two files are a pair.
+ */
+@theme {
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+
+  --color-cream: #fdfaf5;
+  --color-surface: #ffffff;
+  --color-ink: #2f2a24;
+  --color-ink-muted: #6b6157;
+  --color-line: #e6ded2;
+  --color-accent: #8a4212;
+  --color-accent-soft: #fde3d0;
+
+  --color-cat-sports-bg: #d4f0e0;
+  --color-cat-sports-fg: #0f5c3a;
+  --color-cat-sports-border: #a5ddc0;
+
+  --color-cat-spiritual-bg: #e5ddf8;
+  --color-cat-spiritual-fg: #4a3690;
+  --color-cat-spiritual-border: #c3b4ec;
+
+  --color-cat-social-bg: #fde3d0;
+  --color-cat-social-fg: #8a4212;
+  --color-cat-social-border: #f5c3a1;
+
+  --color-cat-service-bg: #d6e9fb;
+  --color-cat-service-fg: #134d7d;
+  --color-cat-service-border: #a8cdf0;
+
+  --color-cat-other-bg: #ece5db;
+  --color-cat-other-fg: #57493a;
+  --color-cat-other-border: #d3c6b5;
+
+  /*
+   * The calendar switches from the agenda list to the month grid here. Pinned
+   * explicitly (it matches Tailwind's default `md`) so the breakpoint lives in
+   * one place and is never duplicated as a JS media query.
+   */
+  --breakpoint-md: 48rem;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+}
+
+/* Visible focus for keyboard users on every interactive element. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
