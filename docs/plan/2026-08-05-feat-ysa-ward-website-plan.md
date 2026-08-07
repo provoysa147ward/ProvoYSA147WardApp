@@ -351,7 +351,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 3: Public site — home, calendar, groups
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Server-component pages reading via `lib/queries.ts` (events_public, groups,
   quick_links, site_settings). Home (blurb, banner w/ expiry, next 5 upcoming, quick
   links). Calendar: `MonthGrid` (semantic table, `aria-live` month heading, ≤3 chips/day

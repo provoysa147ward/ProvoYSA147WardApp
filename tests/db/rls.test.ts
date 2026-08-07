@@ -381,6 +381,14 @@ describe("public content tables", () => {
       .single();
     expect(link.error).toBeNull();
 
+    // site_settings is a single shared row, so restore whatever was there
+    // rather than blanking it — the seeded announcement is dev data others use.
+    const { data: before } = await serviceClient()
+      .from("site_settings")
+      .select("announcement")
+      .eq("id", 1)
+      .single();
+
     const settings = await admin.client
       .from("site_settings")
       .update({ announcement: "Set by an admin test." })
@@ -391,7 +399,7 @@ describe("public content tables", () => {
     await serviceClient().from("quick_links").delete().eq("id", link.data?.id);
     await serviceClient()
       .from("site_settings")
-      .update({ announcement: "" })
+      .update({ announcement: before?.announcement ?? "" })
       .eq("id", 1);
   });
 

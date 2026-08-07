@@ -183,3 +183,97 @@ export function formatTimeRange(start: IsoTime, end: IsoTime | null): string {
   const range = `${formatTimeLabel(start)} – ${formatTimeLabel(end)}`;
   return endsNextDay(start, end) ? `${range} (next day)` : range;
 }
+
+// ---------------------------------------------------------------------------
+// Month grid
+// ---------------------------------------------------------------------------
+
+/** A calendar month. `month` is 1-12. */
+export interface MonthKey {
+  year: number;
+  month: number;
+}
+
+const MONTH_PARAM_PATTERN = /^(\d{4})-(\d{2})$/;
+
+export function monthOf(date: IsoDate): MonthKey {
+  const { year, month } = parseIsoDate(date);
+  return { year, month };
+}
+
+/** `"2026-08"`, the form used in the calendar's `?month=` parameter. */
+export function formatMonthParam({ year, month }: MonthKey): string {
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}`;
+}
+
+/** Parses `?month=`, falling back to `fallback` for anything malformed. */
+export function parseMonthParam(
+  value: string | undefined,
+  fallback: MonthKey,
+): MonthKey {
+  const match = MONTH_PARAM_PATTERN.exec(value ?? "");
+  if (!match) return fallback;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return fallback;
+
+  return { year, month };
+}
+
+export function shiftMonth({ year, month }: MonthKey, delta: number): MonthKey {
+  const zeroBased = month - 1 + delta;
+  return {
+    year: year + Math.floor(zeroBased / 12),
+    month: ((zeroBased % 12) + 12) % 12 + 1,
+  };
+}
+
+/** `"August 2026"`. */
+export function formatMonthLabel(key: MonthKey): string {
+  return formatDayLabel(firstDayOfMonth(key), "MMMM yyyy");
+}
+
+export function firstDayOfMonth({ year, month }: MonthKey): IsoDate {
+  return toIsoDate({ year, month, day: 1 });
+}
+
+export function daysInMonth({ year, month }: MonthKey): number {
+  // Day 0 of the next month is the last day of this one.
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+/** 0 = Sunday, matching the grid's first column. */
+export function weekdayOf(date: IsoDate): number {
+  const { year, month, day } = parseIsoDate(date);
+  return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
+}
+
+/**
+ * The month laid out as whole Sunday-to-Saturday weeks, including the leading
+ * and trailing days from the neighbouring months that fill the first and last
+ * rows. Only as many rows as the month actually needs.
+ */
+export function monthGridWeeks(key: MonthKey): IsoDate[][] {
+  const first = firstDayOfMonth(key);
+  const leading = weekdayOf(first);
+  const weeks = Math.ceil((leading + daysInMonth(key)) / 7);
+  const gridStart = addCalendarDays(first, -leading);
+
+  return Array.from({ length: weeks }, (_, week) =>
+    Array.from({ length: 7 }, (_, day) =>
+      addCalendarDays(gridStart, week * 7 + day),
+    ),
+  );
+}
+
+/** The inclusive date range the grid covers, for expanding occurrences. */
+export function monthGridRange(key: MonthKey): { from: IsoDate; to: IsoDate } {
+  const weeks = monthGridWeeks(key);
+  return { from: weeks[0][0], to: weeks[weeks.length - 1][6] };
+}
+
+export function isInMonth(date: IsoDate, key: MonthKey): boolean {
+  const { year, month } = parseIsoDate(date);
+  return year === key.year && month === key.month;
+}
