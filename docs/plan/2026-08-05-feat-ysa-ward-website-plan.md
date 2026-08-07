@@ -388,7 +388,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 5: Admin auth
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Magic-link login page, `app/auth/confirm/route.ts` (`verifyOtp` with
   `token_hash`), `proxy.ts` session refresh + fast redirect, authoritative
   `app/admin/layout.tsx` guard with `unauthorized()`/`forbidden()` boundaries (verify

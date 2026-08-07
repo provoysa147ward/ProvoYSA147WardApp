@@ -1,0 +1,22 @@
+<!--
+  Magic link email.
+
+  The link points at the site's own /auth/confirm route with a `token_hash`,
+  which the server exchanges via verifyOtp. That keeps the whole exchange
+  server-side — the older fragment-based flow puts the token in a URL fragment,
+  which never reaches a server.
+
+  The same template has to be pasted into the Supabase dashboard for production
+  (Authentication -> Email Templates -> Magic Link). See docs/HANDOFF.md.
+-->
+<h2>Sign in to the Provo YSA 147th Ward site</h2>
+
+<p>Here's your sign-in link. It works once and expires in an hour.</p>
+
+<p>
+  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink">
+    Sign in
+  </a>
+</p>
+
+<p>If you didn't ask for this, you can ignore it — nothing has changed.</p>
