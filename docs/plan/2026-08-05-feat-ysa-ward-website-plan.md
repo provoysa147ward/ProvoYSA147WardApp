@@ -328,7 +328,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 2: Supabase schema, RLS, and clients
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Migrations for all five tables (incl. `site_settings CHECK (id = 1)`), the
   definer-rights `events_public` view (public columns of approved rows only; SELECT
   granted to anon/authenticated; no base-table SELECT for non-admins),

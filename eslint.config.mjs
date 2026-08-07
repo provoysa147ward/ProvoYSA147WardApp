@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scratch files written by the Supabase CLI while the local stack runs.
+    "supabase/.temp/**",
   ]),
 ]);
 
