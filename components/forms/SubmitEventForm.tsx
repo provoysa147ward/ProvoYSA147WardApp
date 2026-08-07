@@ -183,7 +183,7 @@ function EventForm({
       <fieldset className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
         <legend className="px-1 text-sm font-semibold">Does it repeat?</legend>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm">
           <input
             type="checkbox"
             name="repeatsWeekly"

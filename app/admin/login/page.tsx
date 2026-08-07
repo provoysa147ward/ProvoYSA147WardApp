@@ -14,6 +14,8 @@ const ERROR_MESSAGES: Record<string, string> = {
     "That sign-in link didn't look right. Send yourself a fresh one below.",
   removed:
     "Your admin access was removed, so you've been signed out. If that's a surprise, ask another admin to add you back.",
+  "removed-self":
+    "You removed your own admin access and have been signed out. If that wasn't what you meant, ask another admin to add you back.",
 };
 
 export default async function AdminLoginPage({

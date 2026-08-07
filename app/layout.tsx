@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import Link from "next/link";
 
+import { siteUrl } from "@/lib/site";
+
 import "./globals.css";
 
 const nunito = Nunito({
@@ -9,13 +11,24 @@ const nunito = Nunito({
   subsets: ["latin"],
 });
 
+const DESCRIPTION =
+  "Events, groups, and what's happening in the Provo YSA 147th Ward.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "Provo YSA 147th Ward",
     template: "%s · Provo YSA 147th Ward",
   },
-  description:
-    "Events, groups, and what's happening in the Provo YSA 147th Ward.",
+  description: DESCRIPTION,
+  openGraph: {
+    title: "Provo YSA 147th Ward",
+    description: DESCRIPTION,
+    siteName: "Provo YSA 147th Ward",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 const NAV_LINKS = [

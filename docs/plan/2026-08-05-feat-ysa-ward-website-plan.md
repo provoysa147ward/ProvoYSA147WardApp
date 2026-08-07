@@ -458,7 +458,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 9: E2E, polish, handoff docs, deploy
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Playwright E2E against the local stack: submission→approval→public flow;
   non-admin 403; and the automated turnover drill (magic-link login via the local mail
   catcher: add admin B → B signs in → A removes self → ward row shows no remove control).

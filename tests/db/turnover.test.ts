@@ -36,6 +36,10 @@ beforeAll(async () => {
 }, 60_000);
 
 afterAll(async () => {
+  await serviceClient()
+    .from("quick_links")
+    .delete()
+    .in("label", ["Turnover Proof", "A Sneaking Back In"]);
   await removeAdmin(ADMIN_A);
   await removeAdmin(ADMIN_B);
   await deleteUser(adminA.id);
@@ -59,13 +63,16 @@ describe("an admin hands over to their replacement", () => {
     const bAfter = await adminB.client.from("admin_emails").select("email");
     expect((bAfter.data ?? []).length).toBeGreaterThan(0);
 
+    // Prove it by doing admin work on a row this test owns, rather than by
+    // mutating the single shared site_settings row — which would leak into the
+    // seeded data every other suite reads.
     const bWrite = await adminB.client
-      .from("site_settings")
-      .update({ announcement: "B is in charge now." })
-      .eq("id", 1)
-      .select("id");
+      .from("quick_links")
+      .insert({ label: "Turnover Proof", url: "https://example.com/turnover" })
+      .select("id")
+      .single();
     expect(bWrite.error).toBeNull();
-    expect(bWrite.data).toHaveLength(1);
+    expect(bWrite.data?.id).toBeTruthy();
 
     // 3. A removes themselves.
     const removedSelf = await adminA.client
@@ -79,11 +86,9 @@ describe("an admin hands over to their replacement", () => {
     expect(aAfter.data ?? []).toEqual([]);
 
     const aWrite = await adminA.client
-      .from("site_settings")
-      .update({ announcement: "A sneaking back in." })
-      .eq("id", 1)
-      .select("id");
-    expect(aWrite.data ?? []).toEqual([]);
+      .from("quick_links")
+      .insert({ label: "A Sneaking Back In", url: "https://example.com/nope" });
+    expect(aWrite.error).not.toBeNull();
 
     // 5. B still has it, and the ward row is still there as the backstop.
     const stillThere = await adminB.client

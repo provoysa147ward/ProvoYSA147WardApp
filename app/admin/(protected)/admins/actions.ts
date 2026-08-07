@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { fieldErrors, guardMessage } from "@/lib/adminActionSupport";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
@@ -67,8 +68,9 @@ export async function removeAdminEmail(
   _previous: AdminActionState,
   formData: FormData,
 ): Promise<AdminActionState> {
+  let admin;
   try {
-    await requireAdmin();
+    admin = await requireAdmin();
   } catch (error) {
     return { status: "error", errors: {}, formError: guardMessage(error) };
   }
@@ -87,6 +89,14 @@ export async function removeAdminEmail(
       formError:
         "That address can't be removed — it's the ward's permanent admin, kept so nobody can lock everyone out.",
     };
+  }
+
+  // Removing yourself takes effect immediately, so there is no admin page left
+  // to show a success message on. Sign out and say what happened, rather than
+  // re-rendering into a bare 403.
+  if (email === admin.email) {
+    await supabase.auth.signOut();
+    redirect("/admin/login?error=removed-self");
   }
 
   revalidatePath("/admin/admins");

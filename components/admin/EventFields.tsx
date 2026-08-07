@@ -159,7 +159,7 @@ export function EventFields({
       <fieldset className="flex flex-col gap-3 rounded-xl border border-line p-3">
         <legend className="px-1 text-sm font-semibold">Repeat</legend>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex min-h-11 items-center gap-2 text-sm">
           <input
             type="checkbox"
             name="repeatsWeekly"
