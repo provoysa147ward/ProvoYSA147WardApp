@@ -113,3 +113,26 @@ export async function getEvent(id: string): Promise<AdminEvent | null> {
   if (error) throw new Error(`Could not load that event: ${error.message}`);
   return data ? toAdminEvent(data as AdminEventRow) : null;
 }
+
+export interface SyncCounts {
+  failed: number;
+  notSynced: number;
+}
+
+/** How many approved events are not on the ward's Google Calendar. */
+export async function getSyncCounts(): Promise<SyncCounts> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("events")
+    .select("sync_status")
+    .eq("status", "approved")
+    .in("sync_status", ["failed", "not_synced"]);
+
+  if (error) throw new Error(`Could not read sync status: ${error.message}`);
+
+  const rows = data ?? [];
+  return {
+    failed: rows.filter((row) => row.sync_status === "failed").length,
+    notSynced: rows.filter((row) => row.sync_status === "not_synced").length,
+  };
+}

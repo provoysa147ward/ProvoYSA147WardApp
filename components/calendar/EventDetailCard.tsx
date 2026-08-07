@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { formatDayLabel, formatTimeRange } from "@/lib/date";
 import type { EventOccurrence } from "@/lib/events";
+import { addToGoogleCalendarUrl } from "@/lib/google/calendarLink";
 
 import { Button } from "@/components/ui/Button";
 
@@ -121,6 +122,27 @@ function EventDetails({ occurrence }: { occurrence: EventOccurrence }) {
           {event.description}
         </p>
       ) : null}
+
+      {/*
+        A plain template link, independent of whether the ward's own Google
+        Calendar push is set up — so this works from day one either way.
+      */}
+      <a
+        href={addToGoogleCalendarUrl({
+          title: event.title,
+          location: event.location,
+          description: event.description,
+          date: occurrence.date,
+          startTime: event.startTime,
+          endTime: event.endTime,
+        })}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent underline"
+      >
+        Add to Google Calendar
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
     </div>
   );
 }

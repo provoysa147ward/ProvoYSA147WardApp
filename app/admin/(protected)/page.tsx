@@ -1,12 +1,23 @@
 import { PendingQueue } from "@/components/admin/PendingQueue";
+import { SyncBanner } from "@/components/admin/SyncBanner";
 import { ButtonLink } from "@/components/ui/Button";
-import { getPendingEvents } from "@/lib/adminQueries";
+import { getPendingEvents, getSyncCounts } from "@/lib/adminQueries";
+import { isSyncEnabled } from "@/lib/google/calendar";
 
 export default async function AdminDashboard() {
-  const pending = await getPendingEvents();
+  const [pending, syncCounts] = await Promise.all([
+    getPendingEvents(),
+    getSyncCounts(),
+  ]);
 
   return (
     <div className="flex flex-col gap-5">
+      <SyncBanner
+        failedCount={syncCounts.failed}
+        notSyncedCount={syncCounts.notSynced}
+        syncEnabled={isSyncEnabled()}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-bold tracking-tight">
           Waiting for review

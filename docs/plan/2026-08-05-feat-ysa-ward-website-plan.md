@@ -440,7 +440,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 8: Google Calendar sync + operations
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** `lib/google/calendar.ts` (SA auth, deterministic IDs, insert/patch/delete,
   409-as-success — no automatic retry/backoff), wired into Phase 6's approve/edit/delete
   actions behind the env-var flag with `sync_status` transitions, admin sync-failure
