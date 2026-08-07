@@ -123,7 +123,3 @@ export const adminEmailSchema = z.object({
 });
 
 export type AdminEmailInput = z.infer<typeof adminEmailSchema>;
-
-export function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}

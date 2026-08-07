@@ -102,18 +102,6 @@ export async function getEventsByStatus(
   return (data ?? []).map((row) => toAdminEvent(row as AdminEventRow));
 }
 
-export async function getEvent(id: string): Promise<AdminEvent | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("events")
-    .select(COLUMNS)
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) throw new Error(`Could not load that event: ${error.message}`);
-  return data ? toAdminEvent(data as AdminEventRow) : null;
-}
-
 export interface SyncCounts {
   failed: number;
   notSynced: number;

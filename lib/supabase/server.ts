@@ -91,12 +91,6 @@ export async function checkAdmin(): Promise<AdminCheck> {
   return { status: "admin", user: { id: user.id, email } };
 }
 
-/** The signed-in admin, or null. Use when absence is an ordinary outcome. */
-export async function getAdminUser(): Promise<AdminUser | null> {
-  const check = await checkAdmin();
-  return check.status === "admin" ? check.user : null;
-}
-
 /**
  * Guard for every admin server action. Actions are independently-invocable
  * POST endpoints, so each one re-checks rather than trusting the layout that

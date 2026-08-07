@@ -16,7 +16,7 @@ export type ButtonVariant = keyof typeof VARIANTS;
 const BASE =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold transition disabled:opacity-60";
 
-export function buttonClasses(variant: ButtonVariant = "primary") {
+function buttonClasses(variant: ButtonVariant = "primary") {
   return `${BASE} ${VARIANTS[variant]}`;
 }
 

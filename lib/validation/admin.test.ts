@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
   adminEmailSchema,
   groupSchema,
-  normalizeEmail,
   quickLinkSchema,
   siteSettingsSchema,
 } from "@/lib/validation/admin";
@@ -130,10 +129,4 @@ describe("adminEmailSchema", () => {
       expect(adminEmailSchema.safeParse({ email }).success).toBe(false);
     },
   );
-});
-
-describe("normalizeEmail", () => {
-  it("matches what the database trigger does", () => {
-    expect(normalizeEmail("  Person@Example.COM ")).toBe("person@example.com");
-  });
 });
