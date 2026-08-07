@@ -369,7 +369,7 @@ CLI local stack (`supabase start`).
 
 ### Phase 4: Public event submission
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** `/submit` form (all fields incl. weekly-repeat disclosure with required
   until-date ≤ 1 year, helper text "repeats on the same weekday" + in-UI skip-a-week
   note), shared zod validation with inline errors via `useActionState`, honeypot
