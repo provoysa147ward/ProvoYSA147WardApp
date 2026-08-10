@@ -12,18 +12,32 @@ You should never need to change code to change content.
 
 ## 1. What you need custody of
 
-Four accounts. All of them must be owned by the **ward email address**, not by
-a person. Anyone who moves out should be removed rather than the account being
-handed around.
+Five accounts. All of them must be owned by the **ward's own email address**,
+not by a person — anyone who moves out should be removed, rather than the
+account being handed around.
+
+That address is deliberately not written in this file. The repository is
+public, and this one inbox is the recovery path for every other account, so it
+does not belong somewhere it can be scraped. Whoever hands the site over to you
+will tell you which address it is.
 
 | What | Where | Used for | Cost |
 |---|---|---|---|
-| Ward email inbox | wherever the ward's address lives | Owns the other three; receives admin sign-in links | — |
+| Ward email inbox | Gmail | Owns the other four; receives admin sign-in links | — |
+| GitHub repository | github.com | The source code Vercel deploys from | Free |
 | Supabase project | supabase.com | The database, sign-in, group photos | Free |
 | Vercel project | vercel.com | Hosting and the daily keep-alive | Free (Hobby) |
 | Google account + Calendar | google.com | The subscribable ward calendar (optional) | Free |
 
 If you can sign in to the ward email, you can recover everything else.
+
+**"Owned by the ward email" means signed up as it, not invited to it.** There is
+no collaborator to add: Vercel's free Hobby plan has no team members at all
+(that is a paid feature), and a personal GitHub account has no shared ownership
+either. Each account is created by signing up *with the ward's Google account*.
+If any of them is created under a member's personal address instead, the ward
+depends on that person for as long as it stays that way — which is the single
+thing this whole design is trying to avoid.
 
 ### The permanent admin row
 
@@ -42,9 +56,27 @@ that is the guardrail doing its job.
 Do these in order. Steps 1–4 are required; step 5 is optional and can happen
 later without touching anything else.
 
+### 0. Put the repository under the ward's GitHub account
+
+Do this first — Vercel deploys from wherever the code lives, so getting it right
+now avoids re-pointing the deployment later.
+
+1. Sign up at github.com with the ward's Google account, if it does not exist.
+2. From the current owner's account: repository → Settings → scroll to **Danger
+   Zone** → **Transfer ownership** → enter the ward account's username.
+3. Accept the transfer from the ward account's email.
+
+The transfer keeps every commit, branch, and pull request, and GitHub redirects
+the old URL — so nothing breaks. Whoever pushed last will need to update their
+local remote:
+
+```bash
+git remote set-url origin git@github.com:WARD-ACCOUNT/ProvoYSA147WardApp.git
+```
+
 ### 1. Create the Supabase project
 
-Sign in to supabase.com **as the ward email** and create a project. Note the
+Sign in to supabase.com **with the ward's Google account** and create a project. Note the
 project's URL and its two API keys (Project Settings → API):
 
 - the **publishable** key (`sb_publishable_…`) — safe in the browser
@@ -85,8 +117,10 @@ Supabase's default wording rather than the ward's.
 
 ### 4. Configure and deploy on Vercel
 
-Import the repository into Vercel **as the ward email**. Set these environment
-variables (Project Settings → Environment Variables):
+Sign in to Vercel **with the ward's Google account** — in a logged-out window,
+so you do not silently reuse a personal account — and import the repository from
+the ward's GitHub account. Then set these environment variables (Project
+Settings → Environment Variables):
 
 | Variable | Value |
 |---|---|
