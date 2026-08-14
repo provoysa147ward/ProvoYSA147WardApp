@@ -86,6 +86,25 @@ Apply the database schema: with the Supabase CLI installed and the project
 linked (`supabase link`), run `supabase db push`. That creates the tables, the
 security rules, and the group-photo storage bucket.
 
+**If `supabase db push` hangs at "Initialising login role…"**, your network is
+blocking the Postgres port — common on campus and office networks. Confirm it
+in a few seconds:
+
+```bash
+node -e 'const s=require("net").connect({host:"aws-1-us-west-2.pooler.supabase.com",port:5432,timeout:5000});s.on("connect",()=>{console.log("open");s.destroy()});s.on("timeout",()=>{console.log("blocked");s.destroy()});s.on("error",e=>console.log("blocked:",e.code))'
+```
+
+If it is blocked, paste `supabase/migrations/0001_schema.sql` into the
+dashboard's SQL Editor instead — that goes over HTTPS. Afterwards, tell the CLI
+the migration is already applied, so a later push does not try to re-run it:
+
+```bash
+npx supabase migration repair --status applied 0001
+```
+
+Also note: linking a hosted project needs Supabase CLI **2.114 or newer**.
+Earlier versions fail with `LegacyLinkApiKeysNetworkError`.
+
 ### 2. Add the ward's permanent admin row
 
 The database ships empty on purpose, so no placeholder address can become a
@@ -102,18 +121,48 @@ That address can now sign in at `/admin` and add everyone else.
 ### 3. Custom email sending — required
 
 Supabase's built-in mailer allows **two emails per hour**. That is not enough
-for sign-in links, so a free SMTP provider is a launch prerequisite, not a
-nicety.
+for sign-in links, so this is a launch prerequisite, not a nicety.
 
-1. Create a free account with an email provider (Resend's free tier is fine).
-2. In Supabase → Authentication → Emails → SMTP Settings, enable custom SMTP and
-   fill in the provider's host, port, username, and password.
-3. In Authentication → Email Templates → **Magic Link**, replace the body with
+Send through the ward's own Gmail account. Transactional providers (Resend,
+SendGrid, Mailjet) all want a **verified domain** before they will deliver to
+arbitrary recipients, and this site deliberately has no custom domain — so they
+would deliver to the ward's own address and to nobody else, which quietly breaks
+adding any new admin. Gmail has no such restriction, sends genuinely *from* the
+ward's address so the mail is domain-aligned and less likely to be filtered, and
+adds no extra account to look after.
+
+1. Turn on **2-Step Verification** for the ward's Google account
+   (myaccount.google.com/security). App passwords do not exist without it.
+2. Create an **App Password** at myaccount.google.com/apppasswords, named
+   something like "Ward site". Copy the 16-character value — it is shown once.
+3. In Supabase → Project Settings → Authentication → **SMTP Settings**, enable
+   custom SMTP:
+
+   | Field | Value |
+   |---|---|
+   | Sender email | the ward's address |
+   | Sender name | `Provo YSA 147th Ward` |
+   | Host | `smtp.gmail.com` |
+   | Port | `465` |
+   | Username | the ward's address |
+   | Password | the 16-character app password |
+
+4. Raise the send limit: Authentication → **Rate Limits** → *emails per hour*.
+   It stays low until you change it, and a low limit is what makes sign-in look
+   broken for no obvious reason.
+5. In Authentication → Email Templates → **Magic Link**, replace the body with
    the contents of [`supabase/templates/magic-link.html`](../supabase/templates/magic-link.html).
 
-If you skip step 3 the site still works — `/auth/confirm` accepts both the
-custom `token_hash` link and Supabase's stock one — but the email will say
-Supabase's default wording rather than the ward's.
+Gmail allows roughly 500 messages a day against a real load of a few admin
+sign-ins, so there is enormous headroom.
+
+**If sign-in links stop arriving one day**, the likeliest cause is that somebody
+changed the ward Google account's password — that revokes every app password.
+Create a new one and update it in Supabase.
+
+If you skip step 5 the site still works: `/auth/confirm` accepts both the custom
+`token_hash` link and Supabase's stock one. The email just uses Supabase's
+default wording rather than the ward's.
 
 ### 4. Configure and deploy on Vercel
 
