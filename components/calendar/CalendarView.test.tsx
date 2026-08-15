@@ -21,8 +21,6 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
     location: "Stake center gym",
     description: null,
     allDay: false,
-    repeatsWeekly: false,
-    repeatUntil: null,
     ...overrides,
   };
 }

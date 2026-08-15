@@ -49,7 +49,7 @@ The site is at `http://localhost:3000`. Sign in at `/admin` with
 ```
 app/            routes — public pages, /survey, /admin, /auth/confirm
 components/     UI, calendar, forms, admin
-lib/            pure logic (dates, recurrence, validation) and data access
+lib/            pure logic (dates, occurrences, Google mapping) and data access
 supabase/       migrations, seed data, local config
 tests/db/       the security model, against a real database
 tests/e2e/      whole flows in a browser
@@ -59,10 +59,13 @@ Two rules keep this from tangling:
 
 - **Pure modules stay pure.** `lib/date.ts`, `lib/events.ts`,
   `lib/categories.ts`, and `lib/validation/*` do no I/O and import no Supabase
-  client. That is what makes the date and recurrence logic cheap to test hard.
+  client — and so does the Google event mapping, which is the reason its
+  awkward cases (all-day spans, past-midnight events, DST) are cheap to test
+  hard.
 - **Reads go through `lib/queries.ts`; writes go through server actions.**
-  Public reads use the `events_public` view, never the `events` table — see the
-  privacy note in the handoff doc.
+  Events are read from the ward's Google Calendar rather than the database, and
+  that read is the one allowed to fail quietly: a Google outage empties the
+  events region and leaves the rest of the page alone.
 
 ## Checks
 
@@ -81,8 +84,15 @@ npm run test:e2e
 `test:db` and `test:e2e` need the local Supabase stack (`npx supabase start`)
 and a seeded database (`npx supabase db reset`).
 
+The end-to-end suite feeds the app a fixture calendar instead of live Google
+credentials: `playwright.config.ts` writes one from
+`tests/e2e/fixtures/calendarEvents.ts` and points `CALENDAR_FIXTURES` at it.
+That variable names a file inside `tests/e2e/fixtures` and is ignored entirely
+on Vercel, so it can never serve canned events to a visitor.
+
 ## Deploying
 
 See [`docs/HANDOFF.md`](docs/HANDOFF.md) section 2. In short: import into
-Vercel, set four environment variables, create the `event-submit` firewall rule,
-and point Supabase's redirect URLs at the deployed address.
+Vercel, set the Supabase, cron, and Google Calendar environment variables, share
+the ward calendar with the service account, and point Supabase's redirect URLs
+at the deployed address.

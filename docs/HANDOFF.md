@@ -7,8 +7,9 @@ minutes.
 
 **The site:** https://provoysa147ward.vercel.app — admin area at `/admin`.
 
-**The one rule:** everything on the site is edited **on the site**, at `/admin`.
-You should never need to change code to change content.
+**The two rules:** events are managed in the ward's **Google Calendar**, and
+everything else on the site is edited **on the site**, at `/admin`. You should
+never need to change code to change content.
 
 ---
 
@@ -29,7 +30,7 @@ will tell you which address it is.
 | GitHub repository | github.com | The source code Vercel deploys from | Free |
 | Supabase project | supabase.com | The database, sign-in, group photos | Free |
 | Vercel project | vercel.com | Hosting and the daily keep-alive | Free (Hobby) |
-| Google account + Calendar | google.com | The subscribable ward calendar (optional) | Free |
+| Google account + Calendar | google.com | The ward calendar — the source of every event on the site | Free |
 
 If you can sign in to the ward email, you can recover everything else.
 
@@ -195,10 +196,9 @@ Settings → Environment Variables):
 
 Then, still in Vercel:
 
-- **Firewall → New Rule**: create a rate-limit rule with the ID
-  `event-submit`. Without it the submission form still works, it just isn't
-  rate limited. This cannot be tested locally — check it on a preview
-  deployment.
+- If a rate-limit rule with the ID `event-submit` still exists under
+  **Firewall**, delete it. It guarded the public suggestion form, which no
+  longer exists.
 - Confirm the daily cron appears under **Settings → Cron Jobs**. It comes from
   `vercel.json` and calls `/api/keepalive` once a day.
 - **Settings → Deployment Protection → Vercel Authentication → Disabled.** If
@@ -213,13 +213,11 @@ Finally, back in Supabase → Authentication → URL Configuration:
 
 Sign-in links will not work until those two are right.
 
-### 5. Google Calendar — optional, and safe to defer
+### 5. Google Calendar — required for events to appear
 
-The site works completely without this. Approved events simply queue as "not
-synced" and every event still offers an **Add to Google Calendar** link that
-works for visitors regardless.
-
-When you're ready:
+**Every event on the site comes from the ward's Google Calendar.** Without the
+three variables below the site works — announcements, groups, quick links,
+admin — but the events region says the calendar isn't loading.
 
 1. Sign in to Google **as the ward account**. Create a calendar for the ward
    and note its Calendar ID (Calendar settings → Integrate calendar).
@@ -228,7 +226,9 @@ When you're ready:
    download it.
 3. Back in Google Calendar → your ward calendar → Settings → *Share with
    specific people* → add the service account's email address with
-   **"Make changes to events"**.
+   **"See all event details"**. Do not pick "See only free/busy" — that hides
+   the titles, so the site would show blank events. The site only ever reads,
+   so it does not need "Make changes".
 4. In Vercel, add three more environment variables:
 
    | Variable | Where it comes from |
@@ -237,8 +237,8 @@ When you're ready:
    | `GOOGLE_SA_PRIVATE_KEY` | `private_key` in the JSON key, newlines written as `\n` |
    | `GOOGLE_CALENDAR_ID` | The ward calendar's ID |
 
-5. Redeploy, sign in at `/admin`, and press **Retry sync**. Everything approved
-   so far is pushed at once.
+5. Redeploy and check the calendar page. Events appear within about five
+   minutes of any change.
 
 No domain-wide delegation is needed — sharing the calendar with the service
 account is enough.
@@ -247,21 +247,37 @@ account is enough.
 
 ## 3. Running it day to day
 
-### Approving events
+### Managing events in Google Calendar
 
-`/admin` shows everything waiting, oldest first. Open one, fix anything that
-needs fixing, and press **Save and approve** — the edit and the approval happen
-together, so a half-corrected version is never live.
+Add, edit, and delete events in the ward's Google Calendar. Nothing is approved
+or entered on the site — there is no event screen there any more. The site
+re-reads the calendar about every five minutes, so a change takes a few minutes
+to show up.
 
-**Reject** hides a suggestion everywhere public but keeps the record, so the
-same thing doesn't come round again and you can still see who sent it.
+What carries across: the title, the date and times, the location, and the
+description. All-day events show as "All day", and repeating events are handled
+by Google, including a single moved or cancelled occurrence.
 
-### Repeating events, and skipping a week
+**The colour you give an event decides its chip on the site:**
 
-A weekly event is one entry that repeats on the same weekday, up to a year out.
-There is deliberately no way to cancel a single week. To skip one: end the
-series before the gap, then add a second series that picks up after it. The
-same note appears in the form itself, next to the repeat field.
+| Colour in Google Calendar | Chip on the site |
+|---|---|
+| Sage, Basil (greens) | Sports |
+| Lavender, Grape (purples) | Spiritual |
+| Flamingo, Banana, Tangerine, Tomato (warm) | Social |
+| Peacock, Blueberry (blues) | Service |
+| Graphite, or no colour set | Other |
+
+An uncoloured event is not broken — it just gets the neutral chip.
+
+**The calendar is public.** Everything typed into an event — title, location,
+description — appears on the public site, so keep phone numbers and private
+notes out of event descriptions. Names are safe from a different angle: who
+created an event and who was invited are never read by the site at all, and a
+test enforces that.
+
+The site shows roughly three months back and just over a year ahead. Anything
+outside that window shows the normal empty state.
 
 ### Adding and removing admins
 
@@ -270,15 +286,6 @@ that exact address — there is no invitation to accept and no password.
 
 Removing **yourself** works and signs you out immediately. The ward's permanent
 address has no Remove button at all.
-
-### The Google sync banner
-
-If `/admin` shows that events didn't reach Google Calendar, press **Retry
-sync**. That is the whole recovery procedure — there is no background retry, on
-purpose. The site itself is never affected; only the Google copy is missing.
-
-**Edit events on the site, never in Google Calendar.** The sync is one-way.
-Changes made in Google are overwritten the next time that event is edited here.
 
 ---
 
@@ -302,11 +309,23 @@ It takes a couple of minutes. Then check that the cron is still listed in Vercel
 Links work **once** and expire after an hour. A reused link shows a friendly
 page with a button to send a fresh one.
 
-### Google events stopped appearing
+### Events stopped appearing
 
-Service account keys can be revoked or expire. Redo section 2 step 5 — create a
-new key, update the two Vercel variables, redeploy, press Retry sync. The site
-carries on working throughout.
+The site shows "The calendar isn't loading right now" when it cannot read the
+ward calendar. Everything else on the page keeps working, and it retries on the
+next visit — a brief Google hiccup clears itself.
+
+If it persists, work down this list:
+
+1. Is the calendar still shared with the service account, at "See all event
+   details" or better?
+2. Has the service account key been revoked or expired? Redo section 2 step 5:
+   create a new key, update the two Vercel variables, redeploy.
+3. Are all three `GOOGLE_*` variables still set in Vercel, and is
+   `GOOGLE_SA_PRIVATE_KEY` still intact (newlines written as `\n`)?
+
+The deploy logs record the real reason — look for "Could not load the ward
+Google Calendar".
 
 ---
 
@@ -332,12 +351,31 @@ weakest one wins:
 `tests/db/rls.test.ts` proves layer 4 in both directions. If you change the
 policies, that suite is what tells you whether you got it right.
 
-### Submitter privacy
+### The calendar is public — and what the site refuses to read
 
-The public site reads events through the `events_public` view, never the
-`events` table. That view's column list *is* the privacy boundary — it omits
-`submitter_name`, `submitter_contact`, and `status`. Never add them, and never
-repoint a public query at the base table.
+Everything a leader types into a Google Calendar event reaches the public site.
+What does *not* is anything about people: `lib/google/calendarEvents.ts` maps
+only the title, colour, date, times, location, and description, and never
+touches Google's `creator`, `organizer`, or `attendees` fields. A test asserts
+that none of them can reach a `WardEvent`. That mapping is the privacy
+boundary now, in the same way the `events_public` view was before the flip —
+do not widen it.
+
+### The flip to Google Calendar (done — kept for the record)
+
+The site originally stored events in Supabase, took public suggestions, and
+pushed approved events *to* Google. That is all gone. The order the changeover
+had to happen in, in case anything like it is ever done again:
+
+1. Confirm every future event already exists in the ward's Google Calendar —
+   the old push sync had created most of them, but anything it had missed had
+   to be entered by hand first.
+2. Confirm the calendar is shared with the service account at "See all event
+   details".
+3. Deploy the read flip and check that events appear on `/` and `/calendar`.
+4. Only then run `npx supabase db push` to apply
+   `supabase/migrations/0002_drop_events.sql`, which drops the `events` table
+   and its public view. That step is irreversible, which is why it is last.
 
 ### Local development
 
@@ -353,7 +391,7 @@ running any test suite. The file carries a comment saying so.
 
 | Command | Covers |
 |---|---|
-| `npm run test` | Pure logic and components — dates, recurrence, validation, UI |
+| `npm run test` | Pure logic and components — dates, Google event mapping, UI |
 | `npm run test:db` | The security model against a real database |
 | `npm run test:e2e` | Whole flows in a browser, including the turnover drill |
 

@@ -16,8 +16,7 @@ import {
   type MonthKey,
 } from "@/lib/date";
 import {
-  expandEvents,
-  UPCOMING_HORIZON_DAYS,
+  occurrencesInRange,
   type EventOccurrence,
   type WardEvent,
 } from "@/lib/events";
@@ -90,29 +89,26 @@ export function CalendarView({
     chosen ?? (hasMonthParam ? "month" : remembered);
 
   const monthOccurrences = useMemo(
-    () => expandEvents(events, monthGridRange(month)),
+    () => occurrencesInRange(events, monthGridRange(month)),
     [events, month],
   );
 
   // The schedule runs forward from today rather than following the grid's
-  // month, because "what's coming up" is the useful question.
+  // month, because "what's coming up" is the useful question. It has no far
+  // end: the fetch window is what bounds how far ahead events exist at all.
   const scheduleOccurrences = useMemo(
-    () =>
-      expandEvents(events, {
-        from: today,
-        to: addCalendarDays(today, UPCOMING_HORIZON_DAYS),
-      }),
+    () => occurrencesInRange(events, { from: today }),
     [events, today],
   );
 
   const dayOccurrences = useMemo(
-    () => expandEvents(events, { from: anchor, to: anchor }),
+    () => occurrencesInRange(events, { from: anchor, to: anchor }),
     [events, anchor],
   );
 
   const week = useMemo(() => weekRange(anchor), [anchor]);
   const weekOccurrences = useMemo(
-    () => expandEvents(events, week),
+    () => occurrencesInRange(events, week),
     [events, week],
   );
 

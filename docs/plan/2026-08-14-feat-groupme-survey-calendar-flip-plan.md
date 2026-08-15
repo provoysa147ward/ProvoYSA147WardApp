@@ -376,7 +376,7 @@ flowchart LR
 
 ### Phase 4: Retire the write path, admin event screens, events tables, and docs
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Delete push sync, admin queue/event screens, sync banner, admin event
   validation; narrow `WardEvent` (drop `repeatsWeekly`/`repeatUntil`), remove
   `expandEvent`'s weekly branch and `UPCOMING_HORIZON_DAYS` (display horizon = fetch

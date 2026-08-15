@@ -33,32 +33,6 @@ insert into public.quick_links (label, url, sort_order) values
   ('Find the Building', 'https://maps.google.com/', 3)
 on conflict do nothing;
 
--- A spread of events: approved (public), pending (queue only), rejected
--- (invisible), a weekly series, and one that runs past midnight.
-insert into public.events (
-  status, title, category, event_date, start_time, end_time, location,
-  description, repeats_weekly, repeat_until, submitter_name, submitter_contact
-) values
-  ('approved', 'Break the Fast', 'social', current_date + 2, '13:00', '15:00',
-   'Ward building cultural hall', 'Bring a side if you can.', false, null,
-   'Relief Society', 'rs@example.com'),
-  ('approved', 'Institute Class', 'spiritual', current_date + 3, '19:00', '20:30',
-   'Institute building, room 210', 'Doctrine and Covenants this semester.',
-   true, (current_date + 90), 'Institute Council', 'institute@example.com'),
-  ('approved', 'Volleyball', 'sports', current_date + 1, '20:00', '22:00',
-   'Stake center gym', null, true, (current_date + 120), 'Activities', 'activities@example.com'),
-  ('approved', 'Late-Night Game Night', 'social', current_date + 5, '21:30', '00:30',
-   'Apartment 12 clubhouse', 'Runs past midnight — come whenever.', false, null,
-   'Elders Quorum', 'eq@example.com'),
-  ('approved', 'Canyon Service Project', 'service', current_date + 9, '09:00', null,
-   'Rock Canyon trailhead', 'Gloves provided.', false, null,
-   'Service Committee', 'service@example.com'),
-  ('pending', 'Ultimate Frisbee', 'sports', current_date + 7, '18:00', '19:30',
-   'Kiwanis Park', 'Thought this might be fun for the ward.', false, null,
-   'Sam Taylor', 'sam.taylor@example.com'),
-  ('pending', 'Sunday Evening Devotional', 'spiritual', current_date + 11, '19:00', '20:00',
-   'Ward building chapel', null, false, null,
-   'Jordan Reyes', '(801) 555-0182'),
-  ('rejected', 'Off-Campus Party', 'social', current_date + 4, '22:00', '02:00',
-   'Somewhere downtown', null, false, null,
-   'Anonymous', 'anon@example.com');
+-- Events are not seeded: they live in the ward's Google Calendar now, and
+-- the end-to-end suite feeds the app a fixture calendar instead (see
+-- playwright.config.ts).

@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { expandEvents, type WardEvent } from "@/lib/events";
+import { occurrencesInRange, type WardEvent } from "@/lib/events";
 import { monthGridRange } from "@/lib/date";
 
 import { MAX_CHIPS_PER_DAY, MonthGrid } from "./MonthGrid";
@@ -21,8 +21,6 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
     location: "Stake center gym",
     description: null,
     allDay: false,
-    repeatsWeekly: false,
-    repeatUntil: null,
     ...overrides,
   };
 }
@@ -31,7 +29,7 @@ function renderGrid(events: WardEvent[], onSelect = vi.fn()) {
   render(
     <MonthGrid
       month={AUGUST_2026}
-      occurrences={expandEvents(events, monthGridRange(AUGUST_2026))}
+      occurrences={occurrencesInRange(events, monthGridRange(AUGUST_2026))}
       onSelect={onSelect}
       today={TODAY}
     />,
@@ -66,16 +64,13 @@ describe("MonthGrid", () => {
     expect(screen.getByText("Volleyball")).toBeInTheDocument();
   });
 
-  it("renders every occurrence of a weekly series in the month", () => {
-    renderGrid([
-      makeEvent({
-        repeatsWeekly: true,
-        eventDate: "2026-08-04",
-        repeatUntil: "2026-08-25",
-      }),
-    ]);
+  it("renders each instance of a repeating event in its own cell", () => {
+    renderGrid(
+      ["2026-08-04", "2026-08-11", "2026-08-18", "2026-08-25"].map(
+        (eventDate) => makeEvent({ eventDate }),
+      ),
+    );
 
-    // 4 Tuesdays: the 4th, 11th, 18th, and 25th.
     expect(screen.getAllByText("Volleyball")).toHaveLength(4);
   });
 

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { expandEvents, type WardEvent } from "@/lib/events";
+import { occurrencesInRange, type WardEvent } from "@/lib/events";
 
 import { AgendaList } from "./AgendaList";
 
@@ -20,8 +20,6 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
     location: "Institute building",
     description: null,
     allDay: false,
-    repeatsWeekly: false,
-    repeatUntil: null,
     ...overrides,
   };
 }
@@ -29,7 +27,7 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
 function renderAgenda(events: WardEvent[], onSelect = vi.fn()) {
   render(
     <AgendaList
-      occurrences={expandEvents(events, RANGE)}
+      occurrences={occurrencesInRange(events, RANGE)}
       onSelect={onSelect}
       today={TODAY}
     />,
@@ -57,7 +55,7 @@ describe("AgendaList", () => {
   it("labels the day heading with a machine-readable time element", () => {
     const { container } = render(
       <AgendaList
-        occurrences={expandEvents([makeEvent()], RANGE)}
+        occurrences={occurrencesInRange([makeEvent()], RANGE)}
         onSelect={vi.fn()}
         today={TODAY}
       />,
@@ -104,16 +102,22 @@ describe("AgendaList", () => {
     expect(screen.queryByText(/–/)).not.toBeInTheDocument();
   });
 
-  it("expands a weekly series into one entry per occurrence", () => {
+  it("lists a repeating event once per instance, as Google sends them", () => {
+    renderAgenda(
+      ["2026-08-12", "2026-08-19", "2026-08-26"].map((eventDate) =>
+        makeEvent({ eventDate }),
+      ),
+    );
+
+    expect(screen.getAllByText("Institute")).toHaveLength(3);
+  });
+
+  it("labels an all-day event instead of giving it a clock time", () => {
     renderAgenda([
-      makeEvent({
-        repeatsWeekly: true,
-        eventDate: "2026-08-12",
-        repeatUntil: "2026-09-02",
-      }),
+      makeEvent({ startTime: "00:00", endTime: null, allDay: true }),
     ]);
 
-    expect(screen.getAllByText("Institute")).toHaveLength(4);
+    expect(screen.getByText("All day")).toBeInTheDocument();
   });
 
   it("selects the tapped occurrence", async () => {

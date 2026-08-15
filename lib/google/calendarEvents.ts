@@ -206,8 +206,6 @@ export function mapGoogleEvent(item: calendar_v3.Schema$Event): WardEvent[] {
     category: categoryFromGoogleColor(item.colorId),
     location: item.location?.trim() ?? "",
     description: toPlainText(item.description),
-    repeatsWeekly: false,
-    repeatUntil: null,
   };
 
   if (item.start?.date) {

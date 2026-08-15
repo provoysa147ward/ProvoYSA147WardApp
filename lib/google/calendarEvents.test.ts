@@ -52,8 +52,6 @@ describe("mapGoogleEvent", () => {
         location: "Stake center gym",
         description: "Bring water.",
         allDay: false,
-        repeatsWeekly: false,
-        repeatUntil: null,
       },
     ]);
   });
@@ -214,8 +212,8 @@ describe("mapGoogleEvent", () => {
   });
 
   it("never surfaces who organised an event or who is coming", () => {
-    // The successor to the old `events_public` privacy boundary: whatever
-    // Google knows about people must not reach the public site.
+    // This mapping is the privacy boundary now — whatever Google knows about
+    // people must not reach the public site.
     const [event] = mapGoogleEvent(
       timedEvent({
         creator: { email: "bishop@example.com", displayName: "Bishop" },
@@ -238,8 +236,6 @@ describe("mapGoogleEvent", () => {
       "eventDate",
       "id",
       "location",
-      "repeatUntil",
-      "repeatsWeekly",
       "startTime",
       "title",
     ]);

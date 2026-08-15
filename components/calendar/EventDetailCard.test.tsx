@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-import { expandEvent, type WardEvent } from "@/lib/events";
+import { occurrencesInRange, type WardEvent } from "@/lib/events";
 
 import { EventDetailCard } from "./EventDetailCard";
 
@@ -28,14 +28,12 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
     location: "Cultural hall",
     description: "Bring a side if you can.",
     allDay: false,
-    repeatsWeekly: false,
-    repeatUntil: null,
     ...overrides,
   };
 }
 
 function selectionFor(event: WardEvent) {
-  const occurrences = expandEvent(event, {
+  const occurrences = occurrencesInRange([event], {
     from: "2026-08-01",
     to: "2026-12-31",
   });
@@ -68,17 +66,28 @@ describe("EventDetailCard", () => {
     expect(screen.getByText("Sunday, August 9")).toBeInTheDocument();
   });
 
-  it("describes a weekly series and when it stops", () => {
+  it("says so for an all-day event, instead of a clock time", () => {
     render(
       <EventDetailCard
         selection={selectionFor(
-          makeEvent({ repeatsWeekly: true, repeatUntil: "2026-09-27" }),
+          makeEvent({ startTime: "00:00", endTime: null, allDay: true }),
         )}
         onClose={vi.fn()}
       />,
     );
 
-    expect(screen.getByText(/Weekly until September 27, 2026/)).toBeInTheDocument();
+    expect(screen.getByText("All day")).toBeInTheDocument();
+  });
+
+  it("omits the location block when the event has none", () => {
+    render(
+      <EventDetailCard
+        selection={selectionFor(makeEvent({ location: "" }))}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText("Where")).not.toBeInTheDocument();
   });
 
   it("flags an event that runs past midnight", () => {
@@ -106,12 +115,12 @@ describe("EventDetailCard", () => {
   });
 
   it("lists every event when a whole day is selected", () => {
-    const first = expandEvent(makeEvent(), {
+    const first = occurrencesInRange([makeEvent()], {
       from: "2026-08-01",
       to: "2026-08-31",
     })[0];
-    const second = expandEvent(
-      makeEvent({ id: "event-2", title: "Evening Devotional", startTime: "19:00" }),
+    const second = occurrencesInRange(
+      [makeEvent({ id: "event-2", title: "Evening Devotional", startTime: "19:00" })],
       { from: "2026-08-01", to: "2026-08-31" },
     )[0];
 
@@ -139,7 +148,7 @@ describe("EventDetailCard", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("never renders submitter details — they are not in the public data", () => {
+  it("never renders anybody's contact — the mapping never carries it", () => {
     render(
       <EventDetailCard selection={selectionFor(makeEvent())} onClose={vi.fn()} />,
     );

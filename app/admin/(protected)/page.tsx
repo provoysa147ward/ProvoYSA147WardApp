@@ -1,36 +1,59 @@
-import { PendingQueue } from "@/components/admin/PendingQueue";
-import { SyncBanner } from "@/components/admin/SyncBanner";
 import { ButtonLink } from "@/components/ui/Button";
-import { getPendingEvents, getSyncCounts } from "@/lib/adminQueries";
-import { isSyncEnabled } from "@/lib/google/calendar";
 
-export default async function AdminDashboard() {
-  const [pending, syncCounts] = await Promise.all([
-    getPendingEvents(),
-    getSyncCounts(),
-  ]);
-
+/**
+ * The admin landing.
+ *
+ * Events are not managed here any more — they live in the ward's Google
+ * Calendar, which is the tool leaders already use. What is left on this site is
+ * everything Google has no opinion about: groups, page content, and who counts
+ * as an admin.
+ */
+export default function AdminDashboard() {
   return (
-    <div className="flex flex-col gap-5">
-      <SyncBanner
-        failedCount={syncCounts.failed}
-        notSyncedCount={syncCounts.notSynced}
-        syncEnabled={isSyncEnabled()}
-      />
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-6 py-6">
         <h2 className="text-xl font-bold tracking-tight">
-          Waiting for review
-          {pending.length > 0 ? (
-            <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-sm text-cream">
-              {pending.length}
-            </span>
-          ) : null}
+          Events live in the ward Google Calendar
         </h2>
-        <ButtonLink href="/admin/events">Add an event</ButtonLink>
-      </div>
 
-      <PendingQueue events={pending} />
+        <p className="max-w-prose text-ink-muted">
+          Add, edit, or delete an event there and the site picks it up within
+          about five minutes. The colour you give an event decides its chip on
+          the site — see the handoff notes for the colour table.
+        </p>
+
+        <div>
+          <ButtonLink
+            href="https://calendar.google.com/"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Open Google Calendar
+            <span className="sr-only"> (opens in a new tab)</span>
+          </ButtonLink>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="text-xl font-bold tracking-tight">Managed here</h2>
+        <ul className="flex flex-wrap gap-2">
+          <li>
+            <ButtonLink href="/admin/groups" variant="secondary">
+              Groups
+            </ButtonLink>
+          </li>
+          <li>
+            <ButtonLink href="/admin/content" variant="secondary">
+              Content
+            </ButtonLink>
+          </li>
+          <li>
+            <ButtonLink href="/admin/admins" variant="secondary">
+              Admins
+            </ButtonLink>
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }
