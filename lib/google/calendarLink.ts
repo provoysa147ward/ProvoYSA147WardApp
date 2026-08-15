@@ -11,14 +11,15 @@ import {
 /**
  * "Add to Google Calendar" template links.
  *
- * Deliberately separate from `lib/google/calendar.ts`: that module is
+ * Deliberately separate from `lib/google/calendarEvents.ts`: that module is
  * `server-only` and pulls in googleapis, while this is a pure string builder
  * the event detail card renders in the browser. It is also independent of
- * whether the ward's own calendar push is configured, so it works from day one.
+ * whether the ward's calendar credentials are configured, so it works even
+ * when the events themselves cannot be read.
  */
 
 /** Length assumed for an event with no stated end time. */
-export const DEFAULT_DURATION_MINUTES = 120;
+const DEFAULT_DURATION_MINUTES = 120;
 
 /** Google's template URL wants a compact UTC timestamp: 20260810T010000Z. */
 function compact(instant: Date): string {

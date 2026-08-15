@@ -137,6 +137,37 @@ describe("EventDetailCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("points the Add to Google Calendar link at the right instants", () => {
+    render(
+      <EventDetailCard selection={selectionFor(makeEvent())} onClose={vi.fn()} />,
+    );
+
+    const href = screen
+      .getByRole("link", { name: /Add to Google Calendar/ })
+      .getAttribute("href");
+    const dates = new URL(href!).searchParams.get("dates");
+
+    // 1 PM to 3 PM on 9 August 2026, Denver time (UTC-6 in summer).
+    expect(dates).toBe("20260809T190000Z/20260809T210000Z");
+  });
+
+  it("points it at a date range for an all-day event", () => {
+    render(
+      <EventDetailCard
+        selection={selectionFor(
+          makeEvent({ startTime: "00:00", endTime: null, allDay: true }),
+        )}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const href = screen
+      .getByRole("link", { name: /Add to Google Calendar/ })
+      .getAttribute("href");
+
+    expect(new URL(href!).searchParams.get("dates")).toBe("20260809/20260810");
+  });
+
   it("closes when the close button is pressed", async () => {
     const onClose = vi.fn();
     render(

@@ -190,6 +190,21 @@ test("no public page leaks who organised an event or who is coming", async ({
   }
 });
 
+test("the month grid fits a 375px viewport", async ({ page }) => {
+  // Before the switcher the grid was fenced off below md, so a phone could
+  // never render it. Now the Month button (or a ?month= link) can.
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/calendar");
+  await page.getByRole("button", { name: "Month" }).click();
+
+  await expect(page.getByRole("table")).toBeVisible();
+
+  const overflows = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  );
+  expect(overflows).toBe(false);
+});
+
 test("the home page fits a 375px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");

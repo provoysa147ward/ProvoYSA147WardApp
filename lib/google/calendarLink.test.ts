@@ -76,4 +76,25 @@ describe("addToGoogleCalendarUrl", () => {
     expect(params(url).get("text")).toBe("Volleyball & Pizza");
     expect(params(url).get("location")).toBe("Gym #2, 100 N 100 E");
   });
+
+  it("uses a date range, not a time range, for an all-day event", () => {
+    // Google's template takes all-day events as YYYYMMDD/YYYYMMDD with an
+    // exclusive end — the same convention its API uses.
+    const query = params(
+      addToGoogleCalendarUrl({
+        ...baseEvent,
+        startTime: "00:00",
+        endTime: null,
+        allDay: true,
+      }),
+    );
+
+    expect(query.get("dates")).toBe("20260809/20260810");
+  });
+
+  it("still uses instants for a timed event", () => {
+    expect(params(addToGoogleCalendarUrl(baseEvent)).get("dates")).toMatch(
+      /^\d{8}T\d{6}Z\/\d{8}T\d{6}Z$/,
+    );
+  });
 });

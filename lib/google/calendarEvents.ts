@@ -45,8 +45,16 @@ const MONTHS_FORWARD = 13;
 /** Google's per-page maximum. A ward calendar will never come close. */
 const MAX_RESULTS = 2500;
 
-/** A slow Google must not hang a page render. */
+/**
+ * A slow Google must not hang a page render.
+ *
+ * Applied twice on purpose. The per-request value bounds each `events.list`
+ * call; the whole-read deadline bounds everything else googleapis does around
+ * them — above all the OAuth token exchange, which happens before the first
+ * request and carries no timeout of its own.
+ */
 const REQUEST_TIMEOUT_MS = 5_000;
+const READ_DEADLINE_MS = 8_000;
 
 /** How long a successful read is reused for. */
 const CACHE_SECONDS = 300;
@@ -55,6 +63,12 @@ const CACHE_KEY = "ward-calendar-events";
 
 /** Google allows an untitled event; the site still needs something to show. */
 const UNTITLED = "(No title)";
+
+/** Days an all-day event may cover before the mapping stops spreading it. */
+const MAX_ALL_DAY_SPAN = 60;
+
+/** Pages of results to accept before giving up. See `listAllEvents`. */
+const MAX_PAGES = 10;
 
 interface GoogleCredentials {
   clientEmail: string;
@@ -92,13 +106,20 @@ const FIXTURE_DIR = "tests/e2e/fixtures";
  * A JSON array of Google event items, substituted for the API.
  *
  * This is what lets the end-to-end suite exercise the real mapping and the
- * real views without live Google credentials. `CALENDAR_FIXTURES` names a file
- * inside the fixtures folder rather than an arbitrary path: a stray value then
- * cannot point the site at some other file, and the bundler can see that the
- * read is scoped to a subfolder instead of tracing the whole project into the
- * deployment. It is also refused outright on Vercel, so no environment
- * variable can serve canned data to an actual visitor. (`NODE_ENV` cannot be
- * the guard: the e2e suite runs a production build on purpose.)
+ * real views without live Google credentials. Three things keep it from ever
+ * reaching a visitor:
+ *
+ *  - **Real credentials always win** (see `loadWardCalendarEvents`). A
+ *    deployment that can read the ward calendar reads it, whatever else is set
+ *    in the environment — so a stray `CALENDAR_FIXTURES` cannot blank or
+ *    replace the live calendar.
+ *  - **It is refused outright on Vercel**, which is where this site runs.
+ *    (`NODE_ENV` cannot be the guard: the e2e suite runs a production build on
+ *    purpose.)
+ *  - **The value is a file name, not a path**, resolved inside the fixtures
+ *    folder — so it cannot point at another file, and the bundler can see the
+ *    read is scoped to a subfolder rather than tracing the whole project into
+ *    the deployment.
  */
 function fixturePath(): string | null {
   if (process.env.VERCEL) return null;
@@ -128,7 +149,28 @@ export function fetchWindow(today: IsoDate): { from: IsoDate; to: IsoDate } {
  * requires. Throws on any failure, including a timeout, so `unstable_cache`
  * never stores one.
  */
-async function fetchGoogleEvents(): Promise<calendar_v3.Schema$Event[]> {
+function fetchGoogleEvents(): Promise<calendar_v3.Schema$Event[]> {
+  return withDeadline(listAllEvents(), READ_DEADLINE_MS);
+}
+
+/** Rejects if `work` has not settled in time. A timeout is a failure like any other. */
+async function withDeadline<T>(work: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () => reject(new Error(`Google Calendar did not respond within ${ms}ms.`)),
+      ms,
+    );
+  });
+
+  try {
+    return await Promise.race([work, deadline]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
+async function listAllEvents(): Promise<calendar_v3.Schema$Event[]> {
   const creds = credentials();
   if (!creds) throw new Error("Google Calendar credentials are not set.");
 
@@ -142,10 +184,14 @@ async function fetchGoogleEvents(): Promise<calendar_v3.Schema$Event[]> {
 
   const items: calendar_v3.Schema$Event[] = [];
   let pageToken: string | undefined;
+  let pages = 0;
 
   // Pagination is precautionary rather than expected: a ward calendar will
-  // never approach 2500 instances in sixteen months.
+  // never approach 2500 instances in sixteen months. The page cap is the same
+  // kind of precaution one level up — the loop's only other bound is Google
+  // deciding to stop sending tokens.
   do {
+    pages += 1;
     const response = await calendar.events.list(
       {
         calendarId: creds.calendarId,
@@ -161,28 +207,39 @@ async function fetchGoogleEvents(): Promise<calendar_v3.Schema$Event[]> {
 
     items.push(...(response.data.items ?? []));
     pageToken = response.data.nextPageToken ?? undefined;
-  } while (pageToken);
+  } while (pageToken && pages < MAX_PAGES);
 
   return items;
 }
 
-const cachedGoogleEvents = unstable_cache(fetchGoogleEvents, [CACHE_KEY], {
-  revalidate: CACHE_SECONDS,
-});
+// The calendar id is part of the key because it is part of what was fetched:
+// pointing the site at a different calendar must not serve the old one's cache.
+const cachedGoogleEvents = unstable_cache(
+  fetchGoogleEvents,
+  [CACHE_KEY, process.env.GOOGLE_CALENDAR_ID ?? ""],
+  { revalidate: CACHE_SECONDS, tags: [CACHE_KEY] },
+);
 
 /**
  * The ward calendar as `WardEvent`s. Throws if Google cannot be reached —
  * `lib/queries.ts` owns what the site does about that.
  */
 export async function loadWardCalendarEvents(): Promise<WardEvent[]> {
-  const fixture = fixturePath();
-  const items = fixture
-    ? ((JSON.parse(
-        await readFile(fixture, "utf8"),
-      ) as calendar_v3.Schema$Event[]) ?? [])
-    : await cachedGoogleEvents();
+  const items = credentials()
+    ? await cachedGoogleEvents()
+    : await readFixture();
 
   return items.flatMap(mapGoogleEvent);
+}
+
+/** Only reached when there are no credentials at all. See `fixturePath`. */
+async function readFixture(): Promise<calendar_v3.Schema$Event[]> {
+  const fixture = fixturePath();
+  if (!fixture) throw new Error("Google Calendar credentials are not set.");
+
+  return (JSON.parse(
+    await readFile(fixture, "utf8"),
+  ) as calendar_v3.Schema$Event[]) ?? [];
 }
 
 /**
@@ -215,7 +272,15 @@ export function mapGoogleEvent(item: calendar_v3.Schema$Event): WardEvent[] {
     const to = item.end?.date;
     const days: IsoDate[] = [from];
     if (to) {
-      for (let day = addCalendarDays(from, 1); day < to; day = addCalendarDays(day, 1)) {
+      // Capped because every day becomes its own `WardEvent` in the payload
+      // sent to the browser. A ward event does not run for a year; something
+      // that claims to is a mistake in Google, and it should not be able to
+      // bloat every page render.
+      for (
+        let day = addCalendarDays(from, 1);
+        day < to && days.length < MAX_ALL_DAY_SPAN;
+        day = addCalendarDays(day, 1)
+      ) {
         days.push(day);
       }
     }

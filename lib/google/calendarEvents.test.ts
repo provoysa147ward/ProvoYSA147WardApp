@@ -1,5 +1,5 @@
 import type { calendar_v3 } from "googleapis";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * The mapping is the whole risk surface of reading Google: everything else in
@@ -19,7 +19,7 @@ vi.mock("googleapis", () => ({
 }));
 vi.mock("server-only", () => ({}));
 
-const { fetchWindow, mapGoogleEvent } = await import(
+const { canReadCalendar, fetchWindow, mapGoogleEvent } = await import(
   "@/lib/google/calendarEvents"
 );
 
@@ -255,5 +255,72 @@ describe("fetchWindow", () => {
       from: "2025-10-01",
       to: "2027-03-01",
     });
+  });
+});
+
+describe("canReadCalendar — the fixture seam's guard rails", () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs();
+    // No credentials, so only the fixture can make the calendar readable.
+    vi.stubEnv("GOOGLE_SA_CLIENT_EMAIL", "");
+    vi.stubEnv("GOOGLE_SA_PRIVATE_KEY", "");
+    vi.stubEnv("GOOGLE_CALENDAR_ID", "");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("accepts a plain file name", () => {
+    vi.stubEnv("CALENDAR_FIXTURES", "calendar-events.json");
+    expect(canReadCalendar()).toBe(true);
+  });
+
+  it("refuses a fixture on Vercel, whatever the value says", () => {
+    vi.stubEnv("CALENDAR_FIXTURES", "calendar-events.json");
+    vi.stubEnv("VERCEL", "1");
+    expect(canReadCalendar()).toBe(false);
+  });
+
+  it("refuses anything that is a path rather than a name", () => {
+    for (const value of [
+      "../../../etc/passwd",
+      "nested/calendar-events.json",
+      "..\\windows\\hosts",
+      "/etc/passwd",
+    ]) {
+      vi.stubEnv("CALENDAR_FIXTURES", value);
+      expect(canReadCalendar(), value).toBe(false);
+    }
+  });
+
+  it("is false when nothing is configured at all", () => {
+    vi.stubEnv("CALENDAR_FIXTURES", "");
+    expect(canReadCalendar()).toBe(false);
+  });
+
+  it("is true on credentials alone, with no fixture in sight", () => {
+    vi.stubEnv("GOOGLE_SA_CLIENT_EMAIL", "ward@example.iam.gserviceaccount.com");
+    vi.stubEnv("GOOGLE_SA_PRIVATE_KEY", "-----BEGIN PRIVATE KEY-----\\nx\\n");
+    vi.stubEnv("GOOGLE_CALENDAR_ID", "ward@group.calendar.google.com");
+    vi.stubEnv("CALENDAR_FIXTURES", "");
+    vi.stubEnv("VERCEL", "1");
+    expect(canReadCalendar()).toBe(true);
+  });
+});
+
+describe("mapGoogleEvent — bounds", () => {
+  it("stops spreading an implausibly long all-day event", () => {
+    const events = mapGoogleEvent({
+      id: "forever",
+      status: "confirmed",
+      summary: "Semester",
+      start: { date: "2026-01-01" },
+      end: { date: "2030-01-01" },
+    });
+
+    // Bounded rather than one WardEvent per day for four years.
+    expect(events.length).toBeLessThanOrEqual(60);
+    expect(events[0].eventDate).toBe("2026-01-01");
   });
 });

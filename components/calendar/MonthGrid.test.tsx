@@ -74,6 +74,15 @@ describe("MonthGrid", () => {
     expect(screen.getAllByText("Volleyball")).toHaveLength(4);
   });
 
+  it("labels an all-day event instead of giving its chip a clock time", () => {
+    renderGrid([
+      makeEvent({ startTime: "00:00", endTime: null, allDay: true }),
+    ]);
+
+    expect(screen.getByText(/All day/)).toBeInTheDocument();
+    expect(screen.queryByText(/8:00 PM/)).not.toBeInTheDocument();
+  });
+
   it("announces the category to screen readers, not by colour alone", () => {
     renderGrid([makeEvent({ category: "service" })]);
     expect(screen.getByText("Service:")).toBeInTheDocument();

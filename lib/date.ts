@@ -3,9 +3,9 @@
  *
  * Pure module: no I/O, no Supabase, no React. Two rules keep this DST-safe:
  *
- *  1. Calendar arithmetic (`addCalendarDays`, `differenceInCalendarDays`) works
- *     on calendar dates in UTC, where days are always exactly 24 hours. It never
- *     touches wall-clock time, so a spring-forward day cannot shift a date.
+ *  1. Calendar arithmetic (`addCalendarDays`, `weekRange`) works on calendar
+ *     dates in UTC, where days are always exactly 24 hours. It never touches
+ *     wall-clock time, so a spring-forward day cannot shift a date.
  *  2. A wall-clock time is attached to a calendar date only at the very end, via
  *     `wardInstant`, which resolves the offset for that specific date. Adding
  *     7 × 24h to an instant would drift by an hour across a DST boundary;
@@ -25,8 +25,6 @@ export type IsoTime = string;
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ISO_TIME_PATTERN = /^(\d{2}):(\d{2})(?::(\d{2}))?$/;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface CalendarDate {
   year: number;
@@ -111,19 +109,6 @@ export function addCalendarDays(date: IsoDate, days: number): IsoDate {
     month: shifted.getUTCMonth() + 1,
     day: shifted.getUTCDate(),
   });
-}
-
-/** Whole calendar days from `earlier` to `later`; negative when reversed. */
-export function differenceInCalendarDays(
-  later: IsoDate,
-  earlier: IsoDate,
-): number {
-  return Math.round((toUtcMidnight(later) - toUtcMidnight(earlier)) / MS_PER_DAY);
-}
-
-function toUtcMidnight(date: IsoDate): number {
-  const { year, month, day } = parseIsoDate(date);
-  return Date.UTC(year, month - 1, day);
 }
 
 /**

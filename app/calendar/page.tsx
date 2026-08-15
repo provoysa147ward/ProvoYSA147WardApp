@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { EventsUnavailable } from "@/components/calendar/EventsUnavailable";
-import { monthOf, parseMonthParam, wardToday } from "@/lib/date";
+import {
+  formatMonthParam,
+  monthOf,
+  parseMonthParam,
+  wardToday,
+} from "@/lib/date";
 import { getCalendarEvents } from "@/lib/queries";
 
 export const metadata: Metadata = {
@@ -26,7 +31,11 @@ export default async function CalendarPage({
       <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
 
       {calendar.ok ? (
+        // Keyed on the month so navigating `?month=` starts the view fresh:
+        // the day/week anchor and any open detail dialog belong to the month
+        // they were opened in, and a soft navigation would otherwise keep them.
         <CalendarView
+          key={formatMonthParam(month)}
           events={calendar.events}
           month={month}
           today={today}
