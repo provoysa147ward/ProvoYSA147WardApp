@@ -94,7 +94,7 @@ export function CalendarView({
       <div className="hidden md:block">
         {monthOccurrences.length === 0 ? (
           <EmptyState emoji="🗓️" title={`Nothing scheduled in ${formatMonthLabel(month)}.`}>
-            Check another month, or suggest something.
+            Check another month.
           </EmptyState>
         ) : (
           <MonthGrid

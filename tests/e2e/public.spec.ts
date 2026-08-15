@@ -17,6 +17,34 @@ test("the home page shows the announcement and upcoming events", async ({
   ).toBeVisible();
 });
 
+test("the home page leads with the GroupMe banner and the survey link", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const banner = page.getByRole("region", { name: "Join the ward GroupMe" });
+  await expect(banner).toBeVisible();
+  await expect(
+    banner.getByRole("link", { name: /Join the Ward GroupMe/ }),
+  ).toHaveAttribute("href", /groupme\.com\/join_group\//);
+
+  await page.getByRole("link", { name: "New Member Survey" }).click();
+  await expect(
+    page.getByRole("heading", { name: "New Member Survey", level: 1 }),
+  ).toBeVisible();
+});
+
+test("the retired /submit route redirects to the home page", async ({
+  page,
+}) => {
+  await page.goto("/submit");
+
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("heading", { name: "Provo YSA 147th Ward", level: 1 }),
+  ).toBeVisible();
+});
+
 test("the calendar shows a grid on desktop and an agenda on a phone", async ({
   page,
 }) => {
@@ -77,16 +105,13 @@ test("no public page leaks a pending or rejected event", async ({ page }) => {
   }
 });
 
-test("the submission form is usable on a 375px viewport", async ({ page }) => {
+test("the home page fits a 375px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto("/submit");
+  await page.goto("/");
 
   // Nothing may overflow horizontally on a phone.
   const overflows = await page.evaluate(
     () => document.documentElement.scrollWidth > window.innerWidth,
   );
   expect(overflows).toBe(false);
-
-  await expect(page.getByLabel("What is it?")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Send it in" })).toBeVisible();
 });

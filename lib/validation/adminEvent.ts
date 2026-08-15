@@ -2,19 +2,20 @@ import { z } from "zod";
 
 import { EVENT_CATEGORIES } from "@/lib/categories";
 import { addCalendarDays } from "@/lib/date";
-import { MAX_REPEAT_DAYS } from "@/lib/validation/event";
 
 /**
  * What an admin may write to an event.
  *
- * Deliberately *not* the public submission schema. Admins can date an event in
- * the past — correcting last week's entry is a normal thing to do — and the
- * submitter fields are theirs to fill in when they create an event directly.
- * Everything else keeps the same shape so the two paths can't drift.
+ * Admins can date an event in the past — correcting last week's entry is a
+ * normal thing to do — and they fill in the submitter fields themselves when
+ * they create an event directly.
  */
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const ISO_TIME = /^\d{2}:\d{2}(:\d{2})?$/;
+
+/** A weekly series runs for at most a year. */
+export const MAX_REPEAT_DAYS = 366;
 
 const trimmed = (min: number, max: number, label: string) =>
   z

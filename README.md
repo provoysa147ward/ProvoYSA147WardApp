@@ -1,9 +1,8 @@
 # Provo YSA 147th Ward website
 
 A small, warm, mobile-first site for the ward: what's happening, which groups
-you can join, and a way for anyone to suggest an event. Suggestions go live only
-after an admin approves them, and every piece of content is editable through the
-site itself.
+you can join, and a straight line into the ward GroupMe. Every piece of content
+is editable through the site itself.
 
 **Running it, and handing it over:** [`docs/HANDOFF.md`](docs/HANDOFF.md). That
 is the document to read if you have inherited this and just need it to work.
@@ -48,7 +47,7 @@ The site is at `http://localhost:3000`. Sign in at `/admin` with
 ## Layout
 
 ```
-app/            routes — public pages, /submit, /admin, /auth/confirm
+app/            routes — public pages, /survey, /admin, /auth/confirm
 components/     UI, calendar, forms, admin
 lib/            pure logic (dates, recurrence, validation) and data access
 supabase/       migrations, seed data, local config

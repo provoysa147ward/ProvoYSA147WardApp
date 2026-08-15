@@ -40,7 +40,7 @@ describe("AgendaList", () => {
   it("shows a friendly empty state when nothing is scheduled", () => {
     renderAgenda([]);
     expect(
-      screen.getByText("Nothing scheduled yet — suggest an event!"),
+      screen.getByText("Nothing scheduled yet."),
     ).toBeInTheDocument();
   });
 

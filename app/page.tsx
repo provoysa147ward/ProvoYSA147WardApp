@@ -14,6 +14,7 @@ import {
   getSiteSettings,
   type SiteSettings,
 } from "@/lib/queries";
+import { GROUPME_JOIN_URL } from "@/lib/site";
 
 const UPCOMING_COUNT = 5;
 
@@ -29,6 +30,8 @@ export default async function Home() {
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-10">
       <Announcement settings={settings} />
+
+      <GroupMeBanner />
 
       <section className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
@@ -48,8 +51,8 @@ export default async function Home() {
 
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/calendar">See the calendar</ButtonLink>
-          <ButtonLink href="/submit" variant="secondary">
-            Suggest an event
+          <ButtonLink href="/survey" variant="secondary">
+            New Member Survey
           </ButtonLink>
         </div>
       </section>
@@ -65,8 +68,13 @@ export default async function Home() {
         {upcoming.length === 0 ? (
           <EmptyState emoji="🗓️" title="Nothing scheduled yet.">
             Know about something?{" "}
-            <a href="/submit" className="font-semibold text-accent underline">
-              Suggest an event
+            <a
+              href={GROUPME_JOIN_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="font-semibold text-accent underline"
+            >
+              Share it in the ward GroupMe
             </a>
             .
           </EmptyState>
@@ -102,6 +110,36 @@ export default async function Home() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * The first thing a new member should see: how to get into the group chat.
+ *
+ * A labelled `<section>` rather than a heading, so the page outline still opens
+ * at the H1 below it.
+ */
+function GroupMeBanner() {
+  return (
+    <section
+      aria-label="Join the ward GroupMe"
+      className="flex flex-col gap-3 rounded-2xl border border-cat-social-border bg-cat-social-bg px-6 py-6 text-cat-social-fg sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+    >
+      <p className="max-w-prose font-semibold">
+        New here? The ward GroupMe is where plans get made — join it and
+        you&apos;ll know what&apos;s happening.
+      </p>
+
+      <ButtonLink
+        href={GROUPME_JOIN_URL}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="shrink-0"
+      >
+        Join the Ward GroupMe
+        <span className="sr-only"> (opens in a new tab)</span>
+      </ButtonLink>
+    </section>
   );
 }
 

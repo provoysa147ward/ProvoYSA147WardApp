@@ -35,7 +35,6 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/calendar", label: "Calendar" },
   { href: "/groups", label: "Groups" },
-  { href: "/submit", label: "Suggest an Event" },
 ] as const;
 
 // Typed explicitly rather than with Next's generated `LayoutProps` global, so
