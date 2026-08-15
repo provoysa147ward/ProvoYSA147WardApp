@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { CategoryChip } from "@/components/calendar/EventChip";
 import { EventsUnavailable } from "@/components/calendar/EventsUnavailable";
 import { ButtonLink } from "@/components/ui/Button";
@@ -120,11 +122,18 @@ export default async function Home() {
 }
 
 /**
- * The first thing a new member should see: one button into the group chat.
+ * The first thing a new member should see: one button into the group chat,
+ * wearing the same picture the group wears in GroupMe so it is recognisable
+ * before the words are read.
  *
  * Deliberately just the button — no card, no explanatory copy. Anyone who
  * needs the ward GroupMe knows what it is, and a paragraph here only puts
  * words between them and the tap.
+ *
+ * The picture is a rounded square rather than a circle: it is a bordered card
+ * with the ward's name along the bottom, and a circular crop would cut through
+ * both. `alt` is empty because the button's own text already says where this
+ * goes — announcing the picture too would only repeat it.
  */
 function GroupMeBanner() {
   return (
@@ -135,6 +144,13 @@ function GroupMeBanner() {
       size="large"
       className="w-full"
     >
+      <Image
+        src="/groupme.jpg"
+        alt=""
+        width={40}
+        height={40}
+        className="h-10 w-10 shrink-0 rounded-lg object-cover"
+      />
       Join the Ward GroupMe
       <span className="sr-only"> (opens in a new tab)</span>
     </ButtonLink>

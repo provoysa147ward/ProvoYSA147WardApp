@@ -39,9 +39,19 @@ test("the home page leads with the GroupMe banner and the survey link", async ({
 }) => {
   await page.goto("/");
 
-  await expect(
-    page.getByRole("link", { name: /Join the Ward GroupMe/ }),
-  ).toHaveAttribute("href", /groupme\.com\/join_group\//);
+  const joinButton = page.getByRole("link", { name: /Join the Ward GroupMe/ });
+  await expect(joinButton).toHaveAttribute(
+    "href",
+    /groupme\.com\/join_group\//,
+  );
+
+  // The group's picture rides along. Asserting it actually decoded, not just
+  // that the tag exists — a wrong path renders an <img> that never loads.
+  const picture = joinButton.locator("img");
+  await expect(picture).toBeVisible();
+  expect(
+    await picture.evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBeGreaterThan(0);
 
   await page.getByRole("link", { name: "New Member Survey" }).click();
   await expect(
