@@ -20,6 +20,17 @@
   --color-accent: #8a4212;
   --color-accent-soft: #fde3d0;
 
+  /*
+   * Sampled from the ward card in `public/groupme.jpg` so the join banner and
+   * the picture on it read as one object: `bg` is the card's field, `fg` its
+   * ink (11.9:1 against the field — WCAG AAA). If the picture is ever
+   * replaced, resample these.
+   */
+  --color-groupme-bg: #e2ebf2;
+  --color-groupme-bg-hover: #d3e0ea;
+  --color-groupme-fg: #222b31;
+  --color-groupme-border: #b9c9d8;
+
   --color-cat-sports-bg: #d4f0e0;
   --color-cat-sports-fg: #0f5c3a;
   --color-cat-sports-border: #a5ddc0;

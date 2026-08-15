@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { CategoryChip } from "@/components/calendar/EventChip";
 import { EventsUnavailable } from "@/components/calendar/EventsUnavailable";
@@ -130,30 +131,40 @@ export default async function Home() {
  * needs the ward GroupMe knows what it is, and a paragraph here only puts
  * words between them and the tap.
  *
+ * Its colours are the card's own (see `--color-groupme-*` in `globals.css`),
+ * so the picture sits on a field that matches its own and the two read as one
+ * object rather than a photo pasted onto a button.
+ *
+ * Built from a plain `Link` rather than `ButtonLink`: at this size it is a
+ * card, not a button, and forcing it through that primitive would mean
+ * fighting the shared pill radius and padding with overrides that Tailwind
+ * resolves by stylesheet order rather than by the order they are written.
+ *
  * The picture is a rounded square rather than a circle: it is a bordered card
  * with the ward's name along the bottom, and a circular crop would cut through
- * both. `alt` is empty because the button's own text already says where this
+ * both. `alt` is empty because the link's own text already says where this
  * goes — announcing the picture too would only repeat it.
  */
 function GroupMeBanner() {
   return (
-    <ButtonLink
+    <Link
       href={GROUPME_JOIN_URL}
       target="_blank"
       rel="noreferrer noopener"
-      size="large"
-      className="w-full"
+      className="flex w-full flex-col items-center justify-center gap-4 rounded-2xl border border-groupme-border bg-groupme-bg px-6 py-6 text-groupme-fg transition hover:bg-groupme-bg-hover sm:flex-row sm:gap-6 sm:px-10"
     >
       <Image
         src="/groupme.jpg"
         alt=""
-        width={40}
-        height={40}
-        className="h-10 w-10 shrink-0 rounded-lg object-cover"
+        width={176}
+        height={176}
+        className="h-36 w-36 shrink-0 rounded-xl sm:h-44 sm:w-44"
       />
-      Join the Ward GroupMe
-      <span className="sr-only"> (opens in a new tab)</span>
-    </ButtonLink>
+      <span className="text-center text-2xl font-bold tracking-tight sm:text-left sm:text-3xl">
+        Join the Ward GroupMe
+        <span className="sr-only"> (opens in a new tab)</span>
+      </span>
+    </Link>
   );
 }
 
