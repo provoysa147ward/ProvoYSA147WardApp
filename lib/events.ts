@@ -31,6 +31,11 @@ export interface WardEvent {
   endTime: IsoTime | null;
   location: string;
   description: string | null;
+  /**
+   * An all-day event. It still carries a start time of `"00:00"` so the
+   * occurrence maths needs no special case; only the label changes.
+   */
+  allDay: boolean;
   repeatsWeekly: boolean;
   /** Inclusive last date of a weekly series. Required whenever `repeatsWeekly`. */
   repeatUntil: IsoDate | null;

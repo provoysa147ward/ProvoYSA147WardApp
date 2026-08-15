@@ -18,6 +18,7 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
     endTime: "21:00",
     location: "Ward building",
     description: null,
+    allDay: false,
     repeatsWeekly: false,
     repeatUntil: null,
     ...overrides,

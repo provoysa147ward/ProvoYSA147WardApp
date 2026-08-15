@@ -140,6 +140,26 @@ export function wardToday(now: Date = new Date()): IsoDate {
 }
 
 /**
+ * An instant read off the ward's wall clock: the calendar date it falls on
+ * there, and the time it shows. This is how a Google `dateTime` — which
+ * carries whatever offset the event was created in — becomes a ward date and
+ * time, correctly on either side of a DST boundary.
+ */
+export function wardWallClock(instant: Date): { date: IsoDate; time: IsoTime } {
+  const local = new TZDate(instant.getTime(), WARD_TIME_ZONE);
+  return {
+    date: toIsoDate({
+      year: local.getFullYear(),
+      month: local.getMonth() + 1,
+      day: local.getDate(),
+    }),
+    time: `${String(local.getHours()).padStart(2, "0")}:${String(
+      local.getMinutes(),
+    ).padStart(2, "0")}`,
+  };
+}
+
+/**
  * True when an event runs past midnight — the schema encodes that as an end
  * time earlier than the start time. An end time equal to the start is a
  * zero-length event on the same day, not a 24-hour one.
@@ -174,11 +194,19 @@ export function formatDayLabel(date: IsoDate, pattern = "EEEE, MMMM d"): string 
   return format(new Date(year, month - 1, day, 12), pattern);
 }
 
+export const ALL_DAY_LABEL = "All day";
+
 /**
  * `"7:00 PM"`, `"7:00 PM – 9:00 PM"`, or `"9:00 PM – 12:30 AM (next day)"` for
- * an event that runs past midnight.
+ * an event that runs past midnight. An all-day event has no meaningful clock
+ * time, so it says so instead.
  */
-export function formatTimeRange(start: IsoTime, end: IsoTime | null): string {
+export function formatTimeRange(
+  start: IsoTime,
+  end: IsoTime | null,
+  allDay = false,
+): string {
+  if (allDay) return ALL_DAY_LABEL;
   if (!end) return formatTimeLabel(start);
   const range = `${formatTimeLabel(start)} – ${formatTimeLabel(end)}`;
   return endsNextDay(start, end) ? `${range} (next day)` : range;

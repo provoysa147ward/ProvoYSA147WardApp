@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 import { CalendarView } from "@/components/calendar/CalendarView";
+import { EventsUnavailable } from "@/components/calendar/EventsUnavailable";
 import { monthOf, parseMonthParam, wardToday } from "@/lib/date";
-import { getPublicEvents } from "@/lib/queries";
+import { getCalendarEvents } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Calendar",
@@ -18,18 +19,22 @@ export default async function CalendarPage({
   const today = wardToday();
   const month = parseMonthParam(monthParam, monthOf(today));
 
-  const events = await getPublicEvents();
+  const calendar = await getCalendarEvents();
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6 px-4 py-10">
       <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
 
-      <CalendarView
-        events={events}
-        month={month}
-        today={today}
-        hasMonthParam={monthParam !== undefined}
-      />
+      {calendar.ok ? (
+        <CalendarView
+          events={calendar.events}
+          month={month}
+          today={today}
+          hasMonthParam={monthParam !== undefined}
+        />
+      ) : (
+        <EventsUnavailable />
+      )}
     </div>
   );
 }

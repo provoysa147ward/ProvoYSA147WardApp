@@ -351,7 +351,7 @@ flowchart LR
 
 ### Phase 3: Google Calendar read path
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** `lib/google/calendarEvents.ts` (fetch + timeout + pure mapping +
   `unstable_cache` + typed failure + guarded fixture seam), color→category mapping,
   `allDay` support in the event model and views, repoint `lib/queries.ts` (docstring

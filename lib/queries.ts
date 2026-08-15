@@ -1,31 +1,21 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import { isEventCategory, DEFAULT_CATEGORY } from "@/lib/categories";
 import type { WardEvent } from "@/lib/events";
+import {
+  canReadCalendar,
+  loadWardCalendarEvents,
+} from "@/lib/google/calendarEvents";
 import type { IsoDate } from "@/lib/date";
 
 /**
  * Every public read the site does.
  *
- * Events come from `events_public`, never the base table — that view's column
- * list is what keeps submitter contact details off the public site, so nothing
- * here should ever be repointed at `events`.
+ * Groups, quick links, and settings come from Supabase. Events come from the
+ * ward's Google Calendar instead — leaders manage them there — and that read
+ * is the one allowed to fail quietly: a Supabase outage is a broken site, but
+ * a Google outage must only empty the events region.
  */
-
-/** The shape `events_public` exposes. Deliberately has no submitter columns. */
-interface EventPublicRow {
-  id: string;
-  title: string;
-  category: string;
-  event_date: string;
-  start_time: string;
-  end_time: string | null;
-  location: string;
-  description: string | null;
-  repeats_weekly: boolean;
-  repeat_until: string | null;
-}
 
 export interface Group {
   id: string;
@@ -65,37 +55,27 @@ export const EMPTY_SITE_SETTINGS: SiteSettings = {
   contactPhone: "",
 };
 
-function toWardEvent(row: EventPublicRow): WardEvent {
-  return {
-    id: row.id,
-    title: row.title,
-    category: isEventCategory(row.category) ? row.category : DEFAULT_CATEGORY,
-    eventDate: row.event_date,
-    startTime: row.start_time,
-    endTime: row.end_time,
-    location: row.location,
-    description: row.description,
-    repeatsWeekly: row.repeats_weekly,
-    repeatUntil: row.repeat_until,
-  };
-}
+export type CalendarEventsResult =
+  | { ok: true; events: WardEvent[] }
+  | { ok: false };
 
 /**
- * Every approved event, as stored rows rather than occurrences — a weekly
- * series is one row, and `lib/events.ts` expands it for whichever window the
- * caller is rendering.
+ * The ward's events, or a plain "not right now".
+ *
+ * Missing credentials and a Google failure are the same thing to a visitor —
+ * the events region says it is unavailable and everything else on the page
+ * renders normally — so both come back as `ok: false` rather than throwing.
  */
-export async function getPublicEvents(): Promise<WardEvent[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("events_public")
-    .select(
-      "id, title, category, event_date, start_time, end_time, location, description, repeats_weekly, repeat_until",
-    )
-    .order("event_date", { ascending: true });
+export async function getCalendarEvents(): Promise<CalendarEventsResult> {
+  if (!canReadCalendar()) return { ok: false };
 
-  if (error) throw new Error(`Could not load events: ${error.message}`);
-  return (data ?? []).map((row) => toWardEvent(row as EventPublicRow));
+  try {
+    return { ok: true, events: await loadWardCalendarEvents() };
+  } catch (error) {
+    // Worth a line in the deploy logs: it is the one failure the site hides.
+    console.error("Could not load the ward Google Calendar.", error);
+    return { ok: false };
+  }
 }
 
 export async function getGroups(): Promise<Group[]> {

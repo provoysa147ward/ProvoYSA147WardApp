@@ -98,12 +98,14 @@ function EventDetails({ occurrence }: { occurrence: EventOccurrence }) {
       <dl className="flex flex-col gap-1 text-sm">
         <div className="flex gap-2">
           <dt className="font-semibold text-ink-muted">Time</dt>
-          <dd>{formatTimeRange(event.startTime, event.endTime)}</dd>
+          <dd>{formatTimeRange(event.startTime, event.endTime, event.allDay)}</dd>
         </div>
-        <div className="flex gap-2">
-          <dt className="font-semibold text-ink-muted">Where</dt>
-          <dd>{event.location}</dd>
-        </div>
+        {event.location ? (
+          <div className="flex gap-2">
+            <dt className="font-semibold text-ink-muted">Where</dt>
+            <dd>{event.location}</dd>
+          </div>
+        ) : null}
         {event.repeatsWeekly ? (
           <div className="flex gap-2">
             <dt className="font-semibold text-ink-muted">Repeats</dt>
@@ -135,6 +137,7 @@ function EventDetails({ occurrence }: { occurrence: EventOccurrence }) {
           date: occurrence.date,
           startTime: event.startTime,
           endTime: event.endTime,
+          allDay: event.allDay,
         })}
         target="_blank"
         rel="noreferrer noopener"

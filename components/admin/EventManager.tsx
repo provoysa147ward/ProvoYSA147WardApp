@@ -213,6 +213,7 @@ function DeleteControl({
           endTime: event.endTime,
           location: event.location,
           description: null,
+          allDay: false,
           repeatsWeekly: true,
           repeatUntil: event.repeatUntil,
         },

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   CATEGORY_CHIP_CLASSES,
   CATEGORY_LABELS,
+  categoryFromGoogleColor,
   categoryLabel,
   DEFAULT_CATEGORY,
   EVENT_CATEGORIES,
@@ -50,5 +51,36 @@ describe("categoryLabel", () => {
 
   it("falls back to the default label for unknown data", () => {
     expect(categoryLabel("dance")).toBe(CATEGORY_LABELS[DEFAULT_CATEGORY]);
+  });
+});
+
+describe("categoryFromGoogleColor", () => {
+  it("folds each Google colour onto a chip by hue", () => {
+    expect(categoryFromGoogleColor("2")).toBe("sports"); // Sage
+    expect(categoryFromGoogleColor("10")).toBe("sports"); // Basil
+    expect(categoryFromGoogleColor("1")).toBe("spiritual"); // Lavender
+    expect(categoryFromGoogleColor("3")).toBe("spiritual"); // Grape
+    expect(categoryFromGoogleColor("4")).toBe("social"); // Flamingo
+    expect(categoryFromGoogleColor("5")).toBe("social"); // Banana
+    expect(categoryFromGoogleColor("6")).toBe("social"); // Tangerine
+    expect(categoryFromGoogleColor("11")).toBe("social"); // Tomato
+    expect(categoryFromGoogleColor("7")).toBe("service"); // Peacock
+    expect(categoryFromGoogleColor("9")).toBe("service"); // Blueberry
+    expect(categoryFromGoogleColor("8")).toBe("other"); // Graphite
+  });
+
+  it("covers every colour Google can send", () => {
+    for (let colorId = 1; colorId <= 11; colorId += 1) {
+      expect(EVENT_CATEGORIES).toContain(
+        categoryFromGoogleColor(String(colorId)),
+      );
+    }
+  });
+
+  it("falls back to the neutral chip for an uncoloured or unknown event", () => {
+    expect(categoryFromGoogleColor(undefined)).toBe(DEFAULT_CATEGORY);
+    expect(categoryFromGoogleColor(null)).toBe(DEFAULT_CATEGORY);
+    expect(categoryFromGoogleColor("")).toBe(DEFAULT_CATEGORY);
+    expect(categoryFromGoogleColor("42")).toBe(DEFAULT_CATEGORY);
   });
 });

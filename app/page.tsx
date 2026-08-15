@@ -1,4 +1,5 @@
 import { CategoryChip } from "@/components/calendar/EventChip";
+import { EventsUnavailable } from "@/components/calendar/EventsUnavailable";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
@@ -9,7 +10,7 @@ import {
 } from "@/lib/date";
 import { upcomingOccurrences, type EventOccurrence } from "@/lib/events";
 import {
-  getPublicEvents,
+  getCalendarEvents,
   getQuickLinks,
   getSiteSettings,
   type SiteSettings,
@@ -19,13 +20,15 @@ import { GROUPME_JOIN_URL } from "@/lib/site";
 const UPCOMING_COUNT = 5;
 
 export default async function Home() {
-  const [settings, events, quickLinks] = await Promise.all([
+  const [settings, calendar, quickLinks] = await Promise.all([
     getSiteSettings(),
-    getPublicEvents(),
+    getCalendarEvents(),
     getQuickLinks(),
   ]);
 
-  const upcoming = upcomingOccurrences(events, { limit: UPCOMING_COUNT });
+  const upcoming = calendar.ok
+    ? upcomingOccurrences(calendar.events, { limit: UPCOMING_COUNT })
+    : [];
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-10">
@@ -65,7 +68,9 @@ export default async function Home() {
           </ButtonLink>
         </div>
 
-        {upcoming.length === 0 ? (
+        {!calendar.ok ? (
+          <EventsUnavailable />
+        ) : upcoming.length === 0 ? (
           <EmptyState emoji="🗓️" title="Nothing scheduled yet.">
             Know about something?{" "}
             <a
@@ -175,7 +180,9 @@ function UpcomingRow({ occurrence }: { occurrence: EventOccurrence }) {
           <h3 className="font-semibold">{event.title}</h3>
           <CategoryChip category={event.category} />
         </div>
-        <p className="text-sm text-ink-muted">{event.location}</p>
+        {event.location ? (
+          <p className="text-sm text-ink-muted">{event.location}</p>
+        ) : null}
       </div>
 
       <p className="text-sm font-semibold text-ink-muted sm:text-right">
@@ -183,7 +190,7 @@ function UpcomingRow({ occurrence }: { occurrence: EventOccurrence }) {
           {formatDayLabel(occurrence.date)}
         </time>
         <span className="block font-normal">
-          {formatTimeRange(event.startTime, event.endTime)}
+          {formatTimeRange(event.startTime, event.endTime, event.allDay)}
         </span>
       </p>
     </article>

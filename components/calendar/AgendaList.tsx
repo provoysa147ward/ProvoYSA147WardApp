@@ -66,10 +66,12 @@ export function AgendaList({
                       {formatTimeRange(
                         occurrence.event.startTime,
                         occurrence.event.endTime,
+                        occurrence.event.allDay,
                       )}
                     </time>
-                    {" · "}
-                    {occurrence.event.location}
+                    {occurrence.event.location
+                      ? ` · ${occurrence.event.location}`
+                      : null}
                   </p>
                 </button>
               </li>

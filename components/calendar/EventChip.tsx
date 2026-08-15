@@ -44,7 +44,7 @@ export function EventChip({
     >
       <span className="sr-only">{categoryLabel(category)}: </span>
       {title}
-      <span className="sr-only"> at {timeLabel}</span>
+      <span className="sr-only">, {timeLabel}</span>
     </span>
   );
 }
