@@ -41,9 +41,10 @@
   --color-cat-other-border: #d3c6b5;
 
   /*
-   * The calendar switches from the agenda list to the month grid here. Pinned
-   * explicitly (it matches Tailwind's default `md`) so the breakpoint lives in
-   * one place and is never duplicated as a JS media query.
+   * The calendar's month-grid breakpoint. Pinned explicitly (it matches
+   * Tailwind's default `md`) so it is stated once here. The single JS copy of
+   * it lives in `components/calendar/CalendarView.tsx`, which has to pick a
+   * first view before anything renders; keep the two in step.
    */
   --breakpoint-md: 48rem;
 }

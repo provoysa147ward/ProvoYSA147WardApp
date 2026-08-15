@@ -329,7 +329,7 @@ flowchart LR
 
 ### Phase 2: Calendar view switcher
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Schedule/Day/Week/Month switcher with localStorage persistence, smart
   defaults, day/week navigation, per-view empty states, a11y semantics, and tests. Data
   source unchanged (still Supabase) — this phase is pure presentation. Deliberately

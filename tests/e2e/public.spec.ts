@@ -45,15 +45,53 @@ test("the retired /submit route redirects to the home page", async ({
   ).toBeVisible();
 });
 
-test("the calendar shows a grid on desktop and an agenda on a phone", async ({
+test("the calendar opens in the device's default view, without console errors", async ({
   page,
 }) => {
+  // A hydration mismatch is a console error, so an empty console is the
+  // machine-checkable version of "the view resolution does not flicker".
+  const problems: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") problems.push(message.text());
+  });
+  page.on("pageerror", (error) => problems.push(error.message));
+
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/calendar");
+  await expect(
+    page.getByRole("button", { name: "Month", pressed: true }),
+  ).toBeVisible();
   await expect(page.getByRole("table")).toBeVisible();
 
   await page.setViewportSize({ width: 375, height: 812 });
-  await expect(page.getByRole("table")).toBeHidden();
+  await page.goto("/calendar");
+  await expect(
+    page.getByRole("button", { name: "Schedule", pressed: true }),
+  ).toBeVisible();
+  await expect(page.getByRole("table")).toHaveCount(0);
+
+  expect(problems).toEqual([]);
+});
+
+test("the calendar remembers the view you picked", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/calendar");
+
+  await page.getByRole("button", { name: "Week" }).click();
+  await expect(
+    page.getByRole("button", { name: "Week", pressed: true }),
+  ).toBeVisible();
+
+  await page.goto("/calendar");
+  await expect(
+    page.getByRole("button", { name: "Week", pressed: true }),
+  ).toBeVisible();
+
+  // An explicit ?month= link still wins over the remembered choice.
+  await page.goto("/calendar?month=2026-09");
+  await expect(
+    page.getByRole("button", { name: "Month", pressed: true }),
+  ).toBeVisible();
 });
 
 test("tapping an event opens its details without any submitter contact", async ({

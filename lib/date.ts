@@ -185,6 +185,43 @@ export function formatTimeRange(start: IsoTime, end: IsoTime | null): string {
 }
 
 // ---------------------------------------------------------------------------
+// Weeks
+// ---------------------------------------------------------------------------
+
+/**
+ * The Sunday-to-Saturday week containing `date`, inclusive at both ends —
+ * the same week boundary the month grid's columns use.
+ */
+export function weekRange(date: IsoDate): { from: IsoDate; to: IsoDate } {
+  const from = addCalendarDays(date, -weekdayOf(date));
+  return { from, to: addCalendarDays(from, 6) };
+}
+
+/**
+ * `"Aug 16 – 22, 2026"`, collapsing whatever the two ends share: a week that
+ * straddles a month prints `"Aug 30 – Sep 5, 2026"`, and one that straddles a
+ * year prints both years.
+ */
+export function formatWeekLabel({
+  from,
+  to,
+}: {
+  from: IsoDate;
+  to: IsoDate;
+}): string {
+  const start = parseIsoDate(from);
+  const end = parseIsoDate(to);
+
+  if (start.year !== end.year) {
+    return `${formatDayLabel(from, "MMM d, yyyy")} – ${formatDayLabel(to, "MMM d, yyyy")}`;
+  }
+  if (start.month !== end.month) {
+    return `${formatDayLabel(from, "MMM d")} – ${formatDayLabel(to, "MMM d, yyyy")}`;
+  }
+  return `${formatDayLabel(from, "MMM d")} – ${formatDayLabel(to, "d, yyyy")}`;
+}
+
+// ---------------------------------------------------------------------------
 // Month grid
 // ---------------------------------------------------------------------------
 

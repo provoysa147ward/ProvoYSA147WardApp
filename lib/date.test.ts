@@ -7,12 +7,14 @@ import {
   formatDayLabel,
   formatTimeLabel,
   formatTimeRange,
+  formatWeekLabel,
   parseIsoDate,
   parseIsoTime,
   toIsoDate,
   toUtcIso,
   wardInstant,
   wardToday,
+  weekRange,
 } from "@/lib/date";
 
 // 2026 US DST boundaries: spring forward Sun 8 Mar, fall back Sun 1 Nov.
@@ -216,6 +218,72 @@ describe("formatTimeRange", () => {
   it("flags a range that runs past midnight", () => {
     expect(formatTimeRange("21:00", "00:30")).toBe(
       "9:00 PM – 12:30 AM (next day)",
+    );
+  });
+});
+
+describe("weekRange", () => {
+  it("returns the Sunday-to-Saturday week containing a midweek date", () => {
+    expect(weekRange("2026-08-19")).toEqual({
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("treats a Sunday as the start of its own week", () => {
+    expect(weekRange("2026-08-16")).toEqual({
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("treats a Saturday as the end of its own week", () => {
+    expect(weekRange("2026-08-22")).toEqual({
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("crosses a month boundary", () => {
+    expect(weekRange("2026-09-01")).toEqual({
+      from: "2026-08-30",
+      to: "2026-09-05",
+    });
+  });
+
+  it("crosses a year boundary", () => {
+    expect(weekRange("2027-01-01")).toEqual({
+      from: "2026-12-27",
+      to: "2027-01-02",
+    });
+  });
+
+  it("is unaffected by a DST boundary inside the week", () => {
+    expect(weekRange(SPRING_FORWARD)).toEqual({
+      from: "2026-03-08",
+      to: "2026-03-14",
+    });
+    expect(weekRange(FALL_BACK)).toEqual({
+      from: "2026-11-01",
+      to: "2026-11-07",
+    });
+  });
+});
+
+describe("formatWeekLabel", () => {
+  it("collapses a week inside one month", () => {
+    expect(formatWeekLabel(weekRange("2026-08-19"))).toBe("Aug 16 – 22, 2026");
+  });
+
+  it("names both months when the week straddles one", () => {
+    expect(formatWeekLabel(weekRange("2026-09-01"))).toBe(
+      "Aug 30 – Sep 5, 2026",
+    );
+  });
+
+  it("names both years when the week straddles one", () => {
+    expect(formatWeekLabel(weekRange("2027-01-01"))).toBe(
+      "Dec 27, 2026 – Jan 2, 2027",
     );
   });
 });
