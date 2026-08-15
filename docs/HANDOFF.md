@@ -5,6 +5,8 @@ run it indefinitely, and so that nobody's personal account is load-bearing. If
 you are inheriting it, read this end to end once — it should take about fifteen
 minutes.
 
+**The site:** https://provoysa147ward.vercel.app — admin area at `/admin`.
+
 **The one rule:** everything on the site is edited **on the site**, at `/admin`.
 You should never need to change code to change content.
 
@@ -73,6 +75,19 @@ local remote:
 ```bash
 git remote set-url origin git@github.com:WARD-ACCOUNT/ProvoYSA147WardApp.git
 ```
+
+**Keep the repository public.** Vercel's free Hobby plan refuses to deploy a
+commit whose author is not the Vercel account owner — but only for *private*
+repositories. Since the people writing code will not be signed in as the ward,
+a private repository blocks every deployment with:
+
+> The deployment was blocked because the commit author did not have contributing
+> access to the project on Vercel.
+
+Public removes the restriction at no cost. There is nothing to hide here: the
+site's security rests on row-level security and an email allowlist, not on the
+source being secret. The alternative is Vercel Pro at $20/month, which breaks
+the whole point of this build.
 
 ### 1. Create the Supabase project
 
@@ -186,6 +201,10 @@ Then, still in Vercel:
   deployment.
 - Confirm the daily cron appears under **Settings → Cron Jobs**. It comes from
   `vercel.json` and calls `/api/keepalive` once a day.
+- **Settings → Deployment Protection → Vercel Authentication → Disabled.** If
+  this is on, every visitor is redirected to a Vercel sign-in page and the site
+  is effectively invisible. It is easy to miss because the deployment itself
+  looks perfectly healthy.
 
 Finally, back in Supabase → Authentication → URL Configuration:
 
@@ -323,6 +342,12 @@ repoint a public query at the base table.
 ### Local development
 
 See [`README.md`](../README.md).
+
+**`vercel link` and `vercel env pull` overwrite `.env.local` with production
+values.** That points local development at the ward's live database, where
+`npm run test:db` and `npm run test:e2e` create and delete real users and rows.
+If you run either Vercel command, restore `.env.local` to the local stack before
+running any test suite. The file carries a comment saying so.
 
 ### Test suites
 
