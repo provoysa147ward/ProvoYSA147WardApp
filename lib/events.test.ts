@@ -285,6 +285,37 @@ describe("upcomingOccurrences", () => {
     ).toEqual(["2026-08-10", "2026-08-17", "2026-08-24"]);
   });
 
+  it("stops at the end of the requested window", () => {
+    const events = [
+      makeEvent({ id: "today", eventDate: "2026-08-09" }),
+      makeEvent({ id: "in-a-week", eventDate: "2026-08-16" }),
+      makeEvent({ id: "just-past", eventDate: "2026-08-17" }),
+      makeEvent({ id: "next-month", eventDate: "2026-09-20" }),
+    ];
+
+    expect(
+      upcomingOccurrences(events, {
+        now: eveningOfTheNinth,
+        withinDays: 7,
+      }).map((o) => o.event.id),
+    ).toEqual(["today", "in-a-week"]);
+  });
+
+  it("still drops a finished event inside the window", () => {
+    const finished = makeEvent({
+      eventDate: "2026-08-09",
+      startTime: "17:00",
+      endTime: "19:00",
+    });
+
+    expect(
+      upcomingOccurrences([finished], {
+        now: eveningOfTheNinth,
+        withinDays: 7,
+      }),
+    ).toEqual([]);
+  });
+
   it("has no far horizon of its own — the fetch window is the only bound", () => {
     const distant = makeEvent({ id: "distant", eventDate: "2027-08-09" });
 

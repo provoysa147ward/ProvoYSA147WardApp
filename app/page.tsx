@@ -17,7 +17,8 @@ import {
 } from "@/lib/queries";
 import { GROUPME_JOIN_URL } from "@/lib/site";
 
-const UPCOMING_COUNT = 5;
+/** "Coming up" is the next week; the calendar page is there for the rest. */
+const UPCOMING_DAYS = 7;
 
 export default async function Home() {
   const [settings, calendar, quickLinks] = await Promise.all([
@@ -27,7 +28,7 @@ export default async function Home() {
   ]);
 
   const upcoming = calendar.ok
-    ? upcomingOccurrences(calendar.events, { limit: UPCOMING_COUNT })
+    ? upcomingOccurrences(calendar.events, { withinDays: UPCOMING_DAYS })
     : [];
 
   return (
@@ -71,7 +72,7 @@ export default async function Home() {
         {!calendar.ok ? (
           <EventsUnavailable />
         ) : upcoming.length === 0 ? (
-          <EmptyState emoji="🗓️" title="Nothing scheduled yet.">
+          <EmptyState emoji="🗓️" title="Nothing on in the next week.">
             Know about something?{" "}
             <a
               href={GROUPME_JOIN_URL}
@@ -119,32 +120,24 @@ export default async function Home() {
 }
 
 /**
- * The first thing a new member should see: how to get into the group chat.
+ * The first thing a new member should see: one button into the group chat.
  *
- * A labelled `<section>` rather than a heading, so the page outline still opens
- * at the H1 below it.
+ * Deliberately just the button — no card, no explanatory copy. Anyone who
+ * needs the ward GroupMe knows what it is, and a paragraph here only puts
+ * words between them and the tap.
  */
 function GroupMeBanner() {
   return (
-    <section
-      aria-label="Join the ward GroupMe"
-      className="flex flex-col gap-3 rounded-2xl border border-cat-social-border bg-cat-social-bg px-6 py-6 text-cat-social-fg sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+    <ButtonLink
+      href={GROUPME_JOIN_URL}
+      target="_blank"
+      rel="noreferrer noopener"
+      size="large"
+      className="w-full"
     >
-      <p className="max-w-prose font-semibold">
-        New here? The ward GroupMe is where plans get made — join it and
-        you&apos;ll know what&apos;s happening.
-      </p>
-
-      <ButtonLink
-        href={GROUPME_JOIN_URL}
-        target="_blank"
-        rel="noreferrer noopener"
-        className="shrink-0"
-      >
-        Join the Ward GroupMe
-        <span className="sr-only"> (opens in a new tab)</span>
-      </ButtonLink>
-    </section>
+      Join the Ward GroupMe
+      <span className="sr-only"> (opens in a new tab)</span>
+    </ButtonLink>
   );
 }
 
