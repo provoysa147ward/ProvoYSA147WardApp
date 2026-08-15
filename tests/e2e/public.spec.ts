@@ -28,6 +28,10 @@ test("the home page shows the announcement and upcoming events", async ({
   // Straight from the calendar fixture, chip and all.
   await expect(page.getByText(FIXTURE_TITLES.sports)).toBeVisible();
   await expect(page.getByText(FIXTURE_TITLES.allDay)).toBeVisible();
+
+  // "Coming up" is the next week only — the fixture's day+9 event is on the
+  // calendar page, not here.
+  await expect(page.getByText(FIXTURE_TITLES.beyondWeek)).toHaveCount(0);
 });
 
 test("the home page leads with the GroupMe banner and the survey link", async ({
@@ -35,11 +39,19 @@ test("the home page leads with the GroupMe banner and the survey link", async ({
 }) => {
   await page.goto("/");
 
-  const banner = page.getByRole("region", { name: "Join the ward GroupMe" });
-  await expect(banner).toBeVisible();
-  await expect(
-    banner.getByRole("link", { name: /Join the Ward GroupMe/ }),
-  ).toHaveAttribute("href", /groupme\.com\/join_group\//);
+  const joinButton = page.getByRole("link", { name: /Join the Ward GroupMe/ });
+  await expect(joinButton).toHaveAttribute(
+    "href",
+    /groupme\.com\/join_group\//,
+  );
+
+  // The group's picture rides along. Asserting it actually decoded, not just
+  // that the tag exists — a wrong path renders an <img> that never loads.
+  const picture = joinButton.locator("img");
+  await expect(picture).toBeVisible();
+  expect(
+    await picture.evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBeGreaterThan(0);
 
   await page.getByRole("link", { name: "New Member Survey" }).click();
   await expect(
@@ -90,7 +102,10 @@ test("the calendar remembers the view you picked", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/calendar");
 
-  await page.getByRole("button", { name: "Week" }).click();
+  await page
+    .getByRole("group", { name: "Calendar view" })
+    .getByRole("button", { name: "Week", exact: true })
+    .click();
   await expect(
     page.getByRole("button", { name: "Week", pressed: true }),
   ).toBeVisible();
@@ -137,7 +152,11 @@ test("every view renders the calendar, all-day events included", async ({
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/calendar");
 
-  await page.getByRole("button", { name: "Schedule" }).click();
+  // Scoped to the switcher: "Day" and "Week" also appear inside event titles
+  // ("All day") and in the week navigation ("Next week").
+  const views = page.getByRole("group", { name: "Calendar view" });
+
+  await views.getByRole("button", { name: "Schedule", exact: true }).click();
   // A multi-day all-day event shows on each day it covers, labelled as such.
   await expect(
     page.getByRole("button", { name: new RegExp(FIXTURE_TITLES.multiDay) }),
@@ -146,15 +165,20 @@ test("every view renders the calendar, all-day events included", async ({
   // Past-midnight events keep their "(next day)" note.
   await expect(page.getByText(/\(next day\)/)).toBeVisible();
 
-  await page.getByRole("button", { name: "Week" }).click();
-  await expect(
-    page.getByRole("button", { name: new RegExp(FIXTURE_TITLES.sports) }),
-  ).toBeVisible();
+  // Which events land in "this week" depends on the day the suite runs, so the
+  // week view is checked by its own navigation rather than by its contents.
+  await views.getByRole("button", { name: "Week", exact: true }).click();
+  const weekLabel = page.getByRole("heading", { level: 2 });
+  const thisWeek = await weekLabel.textContent();
+  expect(thisWeek).toMatch(/\d{4}$/);
 
-  await page.getByRole("button", { name: "Day" }).click();
+  await page.getByRole("button", { name: "Next week" }).click();
+  await expect(weekLabel).not.toHaveText(thisWeek!);
+
+  await views.getByRole("button", { name: "Day", exact: true }).click();
   await expect(page.getByRole("button", { name: "Next day" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Month" }).click();
+  await views.getByRole("button", { name: "Month", exact: true }).click();
   await expect(page.getByRole("table")).toBeVisible();
 
   // A cancelled instance never appears in any of them.
@@ -195,7 +219,10 @@ test("the month grid fits a 375px viewport", async ({ page }) => {
   // never render it. Now the Month button (or a ?month= link) can.
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/calendar");
-  await page.getByRole("button", { name: "Month" }).click();
+  await page
+    .getByRole("group", { name: "Calendar view" })
+    .getByRole("button", { name: "Month", exact: true })
+    .click();
 
   await expect(page.getByRole("table")).toBeVisible();
 

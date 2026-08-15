@@ -83,6 +83,11 @@ export function occurrencesInRange(
 export interface UpcomingOptions {
   now?: Date;
   limit?: number;
+  /**
+   * Look no further ahead than this many days from today, inclusive. Omitted
+   * means everything the caller was given.
+   */
+  withinDays?: number;
 }
 
 /**
@@ -91,15 +96,18 @@ export interface UpcomingOptions {
  */
 export function upcomingOccurrences(
   events: readonly WardEvent[],
-  { now = new Date(), limit }: UpcomingOptions = {},
+  { now = new Date(), limit, withinDays }: UpcomingOptions = {},
 ): EventOccurrence[] {
+  const today = wardToday(now);
   // Reach back one day so an event that started yesterday and runs past
   // midnight is still considered; the end-time filter below is what actually
   // decides whether it counts as upcoming.
-  const from = addCalendarDays(wardToday(now), -1);
+  const from = addCalendarDays(today, -1);
+  const to =
+    withinDays === undefined ? undefined : addCalendarDays(today, withinDays);
   const cutoff = now.getTime();
 
-  const upcoming = occurrencesInRange(events, { from }).filter(
+  const upcoming = occurrencesInRange(events, { from, to }).filter(
     (occurrence) => occurrence.end.getTime() > cutoff,
   );
 

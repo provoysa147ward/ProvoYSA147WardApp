@@ -26,6 +26,7 @@ export const FIXTURE_TITLES = {
   allDay: "Ward Temple Trip",
   multiDay: "Youth Conference",
   untitled: "(No title)",
+  beyondWeek: "Canyon Service Project",
   cancelled: "Cancelled Fireside",
 } as const;
 
@@ -109,7 +110,7 @@ export function buildCalendarFixture(
     {
       id: "fixture-service-project",
       status: "confirmed",
-      summary: "Canyon Service Project",
+      summary: FIXTURE_TITLES.beyondWeek,
       location: "Rock Canyon trailhead",
       colorId: "7", // Peacock -> service
       start: timed(day(9), "09:00"),
