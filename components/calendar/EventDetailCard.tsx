@@ -15,9 +15,9 @@ import type { CalendarSelection } from "./MonthGrid";
  * The detail view for a tapped event, in a native `<dialog>` so focus trapping,
  * Escape-to-close, and the backdrop come from the platform.
  *
- * It never renders submitter name or contact — those columns are not even
- * present in the data reaching this component (see `events_public`), and this
- * comment is here so nobody adds them.
+ * It never renders anybody's name or contact details — the Google mapping does
+ * not carry them (see `lib/google/calendarEvents.ts`), and this comment is
+ * here so nobody adds them.
  */
 export function EventDetailCard({
   selection,
@@ -98,21 +98,12 @@ function EventDetails({ occurrence }: { occurrence: EventOccurrence }) {
       <dl className="flex flex-col gap-1 text-sm">
         <div className="flex gap-2">
           <dt className="font-semibold text-ink-muted">Time</dt>
-          <dd>{formatTimeRange(event.startTime, event.endTime)}</dd>
+          <dd>{formatTimeRange(event.startTime, event.endTime, event.allDay)}</dd>
         </div>
-        <div className="flex gap-2">
-          <dt className="font-semibold text-ink-muted">Where</dt>
-          <dd>{event.location}</dd>
-        </div>
-        {event.repeatsWeekly ? (
+        {event.location ? (
           <div className="flex gap-2">
-            <dt className="font-semibold text-ink-muted">Repeats</dt>
-            <dd>
-              Weekly
-              {event.repeatUntil
-                ? ` until ${formatDayLabel(event.repeatUntil, "MMMM d, yyyy")}`
-                : ""}
-            </dd>
+            <dt className="font-semibold text-ink-muted">Where</dt>
+            <dd>{event.location}</dd>
           </div>
         ) : null}
       </dl>
@@ -135,6 +126,7 @@ function EventDetails({ occurrence }: { occurrence: EventOccurrence }) {
           date: occurrence.date,
           startTime: event.startTime,
           endTime: event.endTime,
+          allDay: event.allDay,
         })}
         target="_blank"
         rel="noreferrer noopener"

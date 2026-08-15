@@ -38,6 +38,34 @@ export const CATEGORY_CHIP_CLASSES: Record<EventCategory, string> = {
   other: "bg-cat-other-bg text-cat-other-fg border-cat-other-border",
 };
 
+/**
+ * Google Calendar's eleven event colours, folded onto the ward's five chips by
+ * hue, so a chip roughly matches whatever colour a leader picked in Google.
+ * The mapping is documented for leaders in `docs/HANDOFF.md`; an uncoloured
+ * event (Google omits `colorId` when the event uses the calendar's default
+ * colour) lands on the neutral chip.
+ */
+const GOOGLE_COLOR_CATEGORIES: Record<string, EventCategory> = {
+  "1": "spiritual", // Lavender
+  "2": "sports", // Sage
+  "3": "spiritual", // Grape
+  "4": "social", // Flamingo
+  "5": "social", // Banana
+  "6": "social", // Tangerine
+  "7": "service", // Peacock
+  "8": "other", // Graphite
+  "9": "service", // Blueberry
+  "10": "sports", // Basil
+  "11": "social", // Tomato
+};
+
+export function categoryFromGoogleColor(
+  colorId: string | null | undefined,
+): EventCategory {
+  if (!colorId) return DEFAULT_CATEGORY;
+  return GOOGLE_COLOR_CATEGORIES[colorId] ?? DEFAULT_CATEGORY;
+}
+
 export function isEventCategory(value: unknown): value is EventCategory {
   return (
     typeof value === "string" &&

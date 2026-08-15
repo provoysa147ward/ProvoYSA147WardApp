@@ -3,9 +3,9 @@
  *
  * Pure module: no I/O, no Supabase, no React. Two rules keep this DST-safe:
  *
- *  1. Calendar arithmetic (`addCalendarDays`, `differenceInCalendarDays`) works
- *     on calendar dates in UTC, where days are always exactly 24 hours. It never
- *     touches wall-clock time, so a spring-forward day cannot shift a date.
+ *  1. Calendar arithmetic (`addCalendarDays`, `weekRange`) works on calendar
+ *     dates in UTC, where days are always exactly 24 hours. It never touches
+ *     wall-clock time, so a spring-forward day cannot shift a date.
  *  2. A wall-clock time is attached to a calendar date only at the very end, via
  *     `wardInstant`, which resolves the offset for that specific date. Adding
  *     7 × 24h to an instant would drift by an hour across a DST boundary;
@@ -25,8 +25,6 @@ export type IsoTime = string;
 
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ISO_TIME_PATTERN = /^(\d{2}):(\d{2})(?::(\d{2}))?$/;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface CalendarDate {
   year: number;
@@ -113,19 +111,6 @@ export function addCalendarDays(date: IsoDate, days: number): IsoDate {
   });
 }
 
-/** Whole calendar days from `earlier` to `later`; negative when reversed. */
-export function differenceInCalendarDays(
-  later: IsoDate,
-  earlier: IsoDate,
-): number {
-  return Math.round((toUtcMidnight(later) - toUtcMidnight(earlier)) / MS_PER_DAY);
-}
-
-function toUtcMidnight(date: IsoDate): number {
-  const { year, month, day } = parseIsoDate(date);
-  return Date.UTC(year, month - 1, day);
-}
-
 /**
  * Today's calendar date in the ward's time zone, regardless of where the server
  * or the visitor's browser happens to be.
@@ -137,6 +122,26 @@ export function wardToday(now: Date = new Date()): IsoDate {
     month: local.getMonth() + 1,
     day: local.getDate(),
   });
+}
+
+/**
+ * An instant read off the ward's wall clock: the calendar date it falls on
+ * there, and the time it shows. This is how a Google `dateTime` — which
+ * carries whatever offset the event was created in — becomes a ward date and
+ * time, correctly on either side of a DST boundary.
+ */
+export function wardWallClock(instant: Date): { date: IsoDate; time: IsoTime } {
+  const local = new TZDate(instant.getTime(), WARD_TIME_ZONE);
+  return {
+    date: toIsoDate({
+      year: local.getFullYear(),
+      month: local.getMonth() + 1,
+      day: local.getDate(),
+    }),
+    time: `${String(local.getHours()).padStart(2, "0")}:${String(
+      local.getMinutes(),
+    ).padStart(2, "0")}`,
+  };
 }
 
 /**
@@ -174,14 +179,59 @@ export function formatDayLabel(date: IsoDate, pattern = "EEEE, MMMM d"): string 
   return format(new Date(year, month - 1, day, 12), pattern);
 }
 
+export const ALL_DAY_LABEL = "All day";
+
 /**
  * `"7:00 PM"`, `"7:00 PM – 9:00 PM"`, or `"9:00 PM – 12:30 AM (next day)"` for
- * an event that runs past midnight.
+ * an event that runs past midnight. An all-day event has no meaningful clock
+ * time, so it says so instead.
  */
-export function formatTimeRange(start: IsoTime, end: IsoTime | null): string {
+export function formatTimeRange(
+  start: IsoTime,
+  end: IsoTime | null,
+  allDay = false,
+): string {
+  if (allDay) return ALL_DAY_LABEL;
   if (!end) return formatTimeLabel(start);
   const range = `${formatTimeLabel(start)} – ${formatTimeLabel(end)}`;
   return endsNextDay(start, end) ? `${range} (next day)` : range;
+}
+
+// ---------------------------------------------------------------------------
+// Weeks
+// ---------------------------------------------------------------------------
+
+/**
+ * The Sunday-to-Saturday week containing `date`, inclusive at both ends —
+ * the same week boundary the month grid's columns use.
+ */
+export function weekRange(date: IsoDate): { from: IsoDate; to: IsoDate } {
+  const from = addCalendarDays(date, -weekdayOf(date));
+  return { from, to: addCalendarDays(from, 6) };
+}
+
+/**
+ * `"Aug 16 – 22, 2026"`, collapsing whatever the two ends share: a week that
+ * straddles a month prints `"Aug 30 – Sep 5, 2026"`, and one that straddles a
+ * year prints both years.
+ */
+export function formatWeekLabel({
+  from,
+  to,
+}: {
+  from: IsoDate;
+  to: IsoDate;
+}): string {
+  const start = parseIsoDate(from);
+  const end = parseIsoDate(to);
+
+  if (start.year !== end.year) {
+    return `${formatDayLabel(from, "MMM d, yyyy")} – ${formatDayLabel(to, "MMM d, yyyy")}`;
+  }
+  if (start.month !== end.month) {
+    return `${formatDayLabel(from, "MMM d")} – ${formatDayLabel(to, "MMM d, yyyy")}`;
+  }
+  return `${formatDayLabel(from, "MMM d")} – ${formatDayLabel(to, "d, yyyy")}`;
 }
 
 // ---------------------------------------------------------------------------

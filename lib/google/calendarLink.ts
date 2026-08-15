@@ -11,18 +11,24 @@ import {
 /**
  * "Add to Google Calendar" template links.
  *
- * Deliberately separate from `lib/google/calendar.ts`: that module is
+ * Deliberately separate from `lib/google/calendarEvents.ts`: that module is
  * `server-only` and pulls in googleapis, while this is a pure string builder
  * the event detail card renders in the browser. It is also independent of
- * whether the ward's own calendar push is configured, so it works from day one.
+ * whether the ward's calendar credentials are configured, so it works even
+ * when the events themselves cannot be read.
  */
 
 /** Length assumed for an event with no stated end time. */
-export const DEFAULT_DURATION_MINUTES = 120;
+const DEFAULT_DURATION_MINUTES = 120;
 
 /** Google's template URL wants a compact UTC timestamp: 20260810T010000Z. */
 function compact(instant: Date): string {
   return toUtcIso(instant).replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+
+/** An all-day range is dates only: 20260810. */
+function compactDate(date: IsoDate): string {
+  return date.replace(/-/g, "");
 }
 
 export function addToGoogleCalendarUrl(event: {
@@ -32,6 +38,7 @@ export function addToGoogleCalendarUrl(event: {
   date: IsoDate;
   startTime: IsoTime;
   endTime: IsoTime | null;
+  allDay?: boolean;
 }): string {
   const start = wardInstant(event.date, event.startTime);
   const endsOnNextDay = endsNextDay(event.startTime, event.endTime);
@@ -42,10 +49,16 @@ export function addToGoogleCalendarUrl(event: {
       )
     : new Date(start.getTime() + DEFAULT_DURATION_MINUTES * 60 * 1000);
 
+  // An all-day event is a date range in Google's template, not an instant
+  // range — and its end date is exclusive, the same as the API's.
+  const dates = event.allDay
+    ? `${compactDate(event.date)}/${compactDate(addCalendarDays(event.date, 1))}`
+    : `${compact(start)}/${compact(end)}`;
+
   const params = new URLSearchParams({
     action: "TEMPLATE",
     text: event.title,
-    dates: `${compact(start)}/${compact(end)}`,
+    dates,
     location: event.location,
     ctz: WARD_TIME_ZONE,
   });

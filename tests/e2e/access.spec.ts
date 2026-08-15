@@ -84,6 +84,25 @@ test("an expired or reused sign-in link gets a friendly resend page", async ({
   ).toBeVisible();
 });
 
+test("an admin lands on a page that points at Google Calendar", async ({
+  page,
+}) => {
+  await signInAsAdmin(page, SEEDED_ADMIN);
+
+  await expect(
+    page.getByRole("heading", { name: /Events live in the ward Google Calendar/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Open Google Calendar/ }),
+  ).toBeVisible();
+
+  // The retired event screens are gone from the admin nav.
+  const nav = page.getByRole("navigation", { name: "Admin" });
+  await expect(nav.getByRole("link", { name: "Events" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Queue" })).toHaveCount(0);
+  await expect(nav.getByRole("link", { name: "Groups" })).toBeVisible();
+});
+
 test("a non-allowlisted address gets the same reply and no email", async ({
   page,
 }) => {

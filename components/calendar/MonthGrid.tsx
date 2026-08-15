@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ALL_DAY_LABEL,
   formatTimeLabel,
   isInMonth,
   monthGridWeeks,
@@ -157,7 +158,11 @@ function DayCell({
                 <EventChip
                   category={occurrence.event.category}
                   title={occurrence.event.title}
-                  timeLabel={formatTimeLabel(occurrence.event.startTime)}
+                  timeLabel={
+                    occurrence.event.allDay
+                      ? ALL_DAY_LABEL
+                      : formatTimeLabel(occurrence.event.startTime)
+                  }
                 />
               </button>
             </li>

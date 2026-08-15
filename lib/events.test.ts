@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { toUtcIso, wardInstant } from "@/lib/date";
 import {
-  expandEvent,
-  expandEvents,
+  occurrencesInRange,
   upcomingOccurrences,
   type WardEvent,
 } from "@/lib/events";
@@ -18,8 +17,7 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
     endTime: "21:00",
     location: "Ward building",
     description: null,
-    repeatsWeekly: false,
-    repeatUntil: null,
+    allDay: false,
     ...overrides,
   };
 }
@@ -27,13 +25,12 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
 const dates = (occurrences: { date: string }[]) =>
   occurrences.map((occurrence) => occurrence.date);
 
-describe("expandEvent — single events", () => {
-  it("yields one occurrence when the date is inside the range", () => {
+const AUGUST = { from: "2026-08-01", to: "2026-08-31" };
+
+describe("occurrencesInRange", () => {
+  it("resolves an event to an occurrence with real instants", () => {
     const event = makeEvent();
-    const [occurrence] = expandEvent(event, {
-      from: "2026-08-01",
-      to: "2026-08-31",
-    });
+    const [occurrence] = occurrencesInRange([event], AUGUST);
 
     expect(occurrence.date).toBe("2026-08-10");
     expect(occurrence.key).toBe("event-1@2026-08-10");
@@ -45,25 +42,96 @@ describe("expandEvent — single events", () => {
 
   it("includes events on the range boundaries and excludes those outside", () => {
     const range = { from: "2026-08-10", to: "2026-08-12" };
+    const on = (eventDate: string) =>
+      occurrencesInRange([makeEvent({ eventDate })], range);
 
-    expect(expandEvent(makeEvent({ eventDate: "2026-08-10" }), range)).toHaveLength(1);
-    expect(expandEvent(makeEvent({ eventDate: "2026-08-12" }), range)).toHaveLength(1);
-    expect(expandEvent(makeEvent({ eventDate: "2026-08-09" }), range)).toHaveLength(0);
-    expect(expandEvent(makeEvent({ eventDate: "2026-08-13" }), range)).toHaveLength(0);
+    expect(on("2026-08-10")).toHaveLength(1);
+    expect(on("2026-08-12")).toHaveLength(1);
+    expect(on("2026-08-09")).toHaveLength(0);
+    expect(on("2026-08-13")).toHaveLength(0);
+  });
+
+  it("takes everything from the start date when the range has no end", () => {
+    const events = [
+      makeEvent({ id: "past", eventDate: "2026-08-09" }),
+      makeEvent({ id: "soon", eventDate: "2026-08-11" }),
+      makeEvent({ id: "far", eventDate: "2027-05-04" }),
+    ];
+
+    expect(
+      occurrencesInRange(events, { from: "2026-08-10" }).map((o) => o.event.id),
+    ).toEqual(["soon", "far"]);
   });
 
   it("returns nothing for an inverted range", () => {
     expect(
-      expandEvent(makeEvent(), { from: "2026-08-31", to: "2026-08-01" }),
+      occurrencesInRange([makeEvent()], { from: "2026-08-31", to: "2026-08-01" }),
     ).toEqual([]);
+  });
+
+  it("returns nothing when there are no events", () => {
+    expect(occurrencesInRange([], AUGUST)).toEqual([]);
+  });
+
+  it("orders occurrences chronologically", () => {
+    const occurrences = occurrencesInRange(
+      [
+        makeEvent({ id: "c", eventDate: "2026-08-15", startTime: "09:00" }),
+        makeEvent({ id: "a", eventDate: "2026-08-11", startTime: "19:00" }),
+        makeEvent({ id: "b", eventDate: "2026-08-11", startTime: "21:00" }),
+      ],
+      AUGUST,
+    );
+
+    expect(occurrences.map((o) => o.event.id)).toEqual(["a", "b", "c"]);
+  });
+
+  it("breaks same-instant ties by title", () => {
+    const shared = { eventDate: "2026-08-10", startTime: "19:00" };
+    const occurrences = occurrencesInRange(
+      [
+        makeEvent({ id: "b", title: "Volleyball", ...shared }),
+        makeEvent({ id: "a", title: "Break the Fast", ...shared }),
+      ],
+      AUGUST,
+    );
+
+    expect(occurrences.map((o) => o.event.title)).toEqual([
+      "Break the Fast",
+      "Volleyball",
+    ]);
+  });
+
+  it("keeps the occurrences of a multi-day event distinct", () => {
+    // An all-day event covering three days arrives as three events sharing
+    // one Google id; the key is what tells them apart.
+    const allDay = (eventDate: string) =>
+      makeEvent({
+        id: "shared-id",
+        eventDate,
+        startTime: "00:00",
+        endTime: null,
+        allDay: true,
+      });
+
+    const occurrences = occurrencesInRange(
+      ["2026-08-10", "2026-08-11", "2026-08-12"].map(allDay),
+      AUGUST,
+    );
+
+    expect(occurrences.map((o) => o.key)).toEqual([
+      "shared-id@2026-08-10",
+      "shared-id@2026-08-11",
+      "shared-id@2026-08-12",
+    ]);
   });
 });
 
-describe("expandEvent — past-midnight end times", () => {
-  it("puts the end instant on the following calendar day", () => {
-    const [occurrence] = expandEvent(
-      makeEvent({ startTime: "21:00", endTime: "00:30" }),
-      { from: "2026-08-01", to: "2026-08-31" },
+describe("occurrencesInRange — end instants", () => {
+  it("puts a past-midnight end on the following calendar day", () => {
+    const [occurrence] = occurrencesInRange(
+      [makeEvent({ startTime: "21:00", endTime: "00:30" })],
+      AUGUST,
     );
 
     expect(occurrence.date).toBe("2026-08-10");
@@ -74,159 +142,67 @@ describe("expandEvent — past-midnight end times", () => {
   });
 
   it("runs an event with no end time to the end of its day", () => {
-    const [occurrence] = expandEvent(makeEvent({ endTime: null }), {
-      from: "2026-08-01",
-      to: "2026-08-31",
-    });
+    const [occurrence] = occurrencesInRange(
+      [makeEvent({ endTime: null })],
+      AUGUST,
+    );
 
     expect(occurrence.endsNextDay).toBe(false);
     expect(occurrence.end).toEqual(wardInstant("2026-08-11", "00:00"));
   });
-});
 
-describe("expandEvent — weekly recurrence", () => {
-  const weekly = makeEvent({
-    repeatsWeekly: true,
-    eventDate: "2026-08-10",
-    repeatUntil: "2026-08-31",
-  });
-
-  it("repeats on the same weekday until the until-date", () => {
-    const occurrences = expandEvent(weekly, {
-      from: "2026-08-01",
-      to: "2026-09-30",
-    });
-
-    expect(dates(occurrences)).toEqual([
-      "2026-08-10",
-      "2026-08-17",
-      "2026-08-24",
-      "2026-08-31",
-    ]);
-  });
-
-  it("treats the until-date as inclusive when an occurrence lands on it", () => {
-    const occurrences = expandEvent(
-      { ...weekly, repeatUntil: "2026-08-24" },
-      { from: "2026-08-01", to: "2026-09-30" },
+  it("runs an all-day event from midnight to midnight", () => {
+    const [occurrence] = occurrencesInRange(
+      [makeEvent({ startTime: "00:00", endTime: null, allDay: true })],
+      AUGUST,
     );
 
-    expect(dates(occurrences)).toEqual([
-      "2026-08-10",
-      "2026-08-17",
-      "2026-08-24",
-    ]);
-  });
-
-  it("stops before an occurrence that falls after the until-date", () => {
-    const occurrences = expandEvent(
-      { ...weekly, repeatUntil: "2026-08-23" },
-      { from: "2026-08-01", to: "2026-09-30" },
-    );
-
-    expect(dates(occurrences)).toEqual(["2026-08-10", "2026-08-17"]);
-  });
-
-  it("clips to the requested range at both ends", () => {
-    const occurrences = expandEvent(
-      { ...weekly, repeatUntil: "2026-09-30" },
-      { from: "2026-08-18", to: "2026-09-01" },
-    );
-
-    expect(dates(occurrences)).toEqual([
-      "2026-08-24",
-      "2026-08-31",
-    ]);
-  });
-
-  it("starts on the range's first day when an occurrence lands exactly there", () => {
-    const occurrences = expandEvent(
-      { ...weekly, repeatUntil: "2026-09-30" },
-      { from: "2026-08-17", to: "2026-08-25" },
-    );
-
-    expect(dates(occurrences)).toEqual(["2026-08-17", "2026-08-24"]);
-  });
-
-  it("terminates at the range when the until-date is missing", () => {
-    const occurrences = expandEvent(
-      { ...weekly, repeatUntil: null },
-      { from: "2026-08-01", to: "2026-08-31" },
-    );
-
-    expect(dates(occurrences)).toEqual([
-      "2026-08-10",
-      "2026-08-17",
-      "2026-08-24",
-      "2026-08-31",
-    ]);
+    expect(occurrence.start).toEqual(wardInstant("2026-08-10", "00:00"));
+    expect(occurrence.end).toEqual(wardInstant("2026-08-11", "00:00"));
   });
 });
 
-describe("expandEvent — DST correctness of a weekly series", () => {
-  it("holds a 7 PM series at 7 PM across fall-back", () => {
-    const occurrences = expandEvent(
-      makeEvent({
-        eventDate: "2026-10-18",
-        startTime: "19:00",
-        endTime: "21:00",
-        repeatsWeekly: true,
-        repeatUntil: "2026-11-15",
-      }),
+describe("occurrencesInRange — DST", () => {
+  it("holds 7 PM at 7 PM on either side of fall-back", () => {
+    const occurrences = occurrencesInRange(
+      [
+        makeEvent({ id: "before", eventDate: "2026-10-25" }),
+        makeEvent({ id: "after", eventDate: "2026-11-01" }),
+      ],
       { from: "2026-10-01", to: "2026-11-30" },
     );
 
-    expect(dates(occurrences)).toEqual([
-      "2026-10-18",
-      "2026-10-25",
-      "2026-11-01",
-      "2026-11-08",
-      "2026-11-15",
-    ]);
     for (const occurrence of occurrences) {
       expect(occurrence.start.getHours()).toBe(19);
       expect(occurrence.end.getHours()).toBe(21);
     }
-    // The offset really does change mid-series — the wall clock is what held.
-    expect(toUtcIso(occurrences[1].start)).toBe("2026-10-26T01:00:00.000Z");
-    expect(toUtcIso(occurrences[2].start)).toBe("2026-11-02T02:00:00.000Z");
+    // The offset really does change between them — the wall clock is what held.
+    expect(toUtcIso(occurrences[0].start)).toBe("2026-10-26T01:00:00.000Z");
+    expect(toUtcIso(occurrences[1].start)).toBe("2026-11-02T02:00:00.000Z");
   });
 
-  it("holds a 7 PM series at 7 PM across spring-forward", () => {
-    const occurrences = expandEvent(
-      makeEvent({
-        eventDate: "2026-02-22",
-        startTime: "19:00",
-        endTime: "21:00",
-        repeatsWeekly: true,
-        repeatUntil: "2026-03-22",
-      }),
+  it("holds 7 PM at 7 PM on either side of spring-forward", () => {
+    const occurrences = occurrencesInRange(
+      [
+        makeEvent({ id: "before", eventDate: "2026-03-01" }),
+        makeEvent({ id: "after", eventDate: "2026-03-08" }),
+      ],
       { from: "2026-02-01", to: "2026-03-31" },
     );
 
-    expect(dates(occurrences)).toEqual([
-      "2026-02-22",
-      "2026-03-01",
-      "2026-03-08",
-      "2026-03-15",
-      "2026-03-22",
-    ]);
     for (const occurrence of occurrences) {
       expect(occurrence.start.getHours()).toBe(19);
     }
-    expect(toUtcIso(occurrences[1].start)).toBe("2026-03-02T02:00:00.000Z");
-    expect(toUtcIso(occurrences[2].start)).toBe("2026-03-09T01:00:00.000Z");
+    expect(toUtcIso(occurrences[0].start)).toBe("2026-03-02T02:00:00.000Z");
+    expect(toUtcIso(occurrences[1].start)).toBe("2026-03-09T01:00:00.000Z");
   });
 
-  it("keeps a past-midnight series ending at the same wall clock across fall-back", () => {
-    const occurrences = expandEvent(
-      makeEvent({
-        eventDate: "2026-10-25",
-        startTime: "22:00",
-        endTime: "00:30",
-        repeatsWeekly: true,
-        repeatUntil: "2026-11-01",
-      }),
+  it("keeps a past-midnight event ending at the same wall clock across fall-back", () => {
+    const occurrences = occurrencesInRange(
+      [
+        makeEvent({ id: "before", eventDate: "2026-10-25", startTime: "22:00", endTime: "00:30" }),
+        makeEvent({ id: "after", eventDate: "2026-11-01", startTime: "22:00", endTime: "00:30" }),
+      ],
       { from: "2026-10-01", to: "2026-11-30" },
     );
 
@@ -237,57 +213,6 @@ describe("expandEvent — DST correctness of a weekly series", () => {
       expect(occurrence.end.getHours()).toBe(0);
       expect(occurrence.end.getMinutes()).toBe(30);
     }
-  });
-});
-
-describe("expandEvents", () => {
-  it("merges every event's occurrences in chronological order", () => {
-    const weekly = makeEvent({
-      id: "weekly",
-      title: "Institute",
-      eventDate: "2026-08-11",
-      startTime: "19:00",
-      repeatsWeekly: true,
-      repeatUntil: "2026-08-25",
-    });
-    const oneOff = makeEvent({
-      id: "one-off",
-      title: "Service Project",
-      eventDate: "2026-08-15",
-      startTime: "09:00",
-    });
-
-    const occurrences = expandEvents([oneOff, weekly], {
-      from: "2026-08-01",
-      to: "2026-08-31",
-    });
-
-    expect(occurrences.map((o) => o.key)).toEqual([
-      "weekly@2026-08-11",
-      "one-off@2026-08-15",
-      "weekly@2026-08-18",
-      "weekly@2026-08-25",
-    ]);
-  });
-
-  it("breaks same-instant ties by title", () => {
-    const shared = { eventDate: "2026-08-10", startTime: "19:00" };
-    const occurrences = expandEvents(
-      [
-        makeEvent({ id: "b", title: "Volleyball", ...shared }),
-        makeEvent({ id: "a", title: "Break the Fast", ...shared }),
-      ],
-      { from: "2026-08-01", to: "2026-08-31" },
-    );
-
-    expect(occurrences.map((o) => o.event.title)).toEqual([
-      "Break the Fast",
-      "Volleyball",
-    ]);
-  });
-
-  it("returns nothing when there are no events", () => {
-    expect(expandEvents([], { from: "2026-08-01", to: "2026-08-31" })).toEqual([]);
   });
 });
 
@@ -348,29 +273,24 @@ describe("upcomingOccurrences", () => {
   });
 
   it("returns only the next `limit` occurrences, soonest first", () => {
-    const weekly = makeEvent({
-      repeatsWeekly: true,
-      eventDate: "2026-08-10",
-      repeatUntil: "2026-09-30",
-    });
+    const events = [
+      makeEvent({ id: "a", eventDate: "2026-08-10" }),
+      makeEvent({ id: "b", eventDate: "2026-08-17" }),
+      makeEvent({ id: "c", eventDate: "2026-08-24" }),
+      makeEvent({ id: "d", eventDate: "2026-08-31" }),
+    ];
 
-    const next3 = upcomingOccurrences([weekly], {
-      now: eveningOfTheNinth,
-      limit: 3,
-    });
-
-    expect(dates(next3)).toEqual(["2026-08-10", "2026-08-17", "2026-08-24"]);
+    expect(
+      dates(upcomingOccurrences(events, { now: eveningOfTheNinth, limit: 3 })),
+    ).toEqual(["2026-08-10", "2026-08-17", "2026-08-24"]);
   });
 
-  it("bounds an unbounded series at the one-year horizon", () => {
-    const forever = makeEvent({ repeatsWeekly: true, repeatUntil: null });
+  it("has no far horizon of its own — the fetch window is the only bound", () => {
+    const distant = makeEvent({ id: "distant", eventDate: "2027-08-09" });
 
-    const occurrences = upcomingOccurrences([forever], {
-      now: eveningOfTheNinth,
-    });
-
-    expect(occurrences.length).toBeGreaterThan(50);
-    expect(occurrences.length).toBeLessThanOrEqual(53);
+    expect(
+      upcomingOccurrences([distant], { now: eveningOfTheNinth }),
+    ).toHaveLength(1);
   });
 
   it("returns nothing when every event is in the past", () => {

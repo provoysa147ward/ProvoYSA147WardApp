@@ -28,7 +28,15 @@ export function CategoryChip({
   );
 }
 
-/** One event inside a month-grid day cell. Titles ellipsize rather than wrap. */
+/**
+ * One event inside a month-grid day cell. Titles ellipsize rather than wrap.
+ *
+ * `relative` is load-bearing: the screen-reader spans below are absolutely
+ * positioned (that is what `sr-only` does), so without a positioned ancestor
+ * they resolve against the page. Inside a truncated chip that lands them past
+ * the right edge, which widens the document — a horizontal scrollbar on a
+ * phone, where the grid is now reachable.
+ */
 export function EventChip({
   category,
   title,
@@ -40,11 +48,11 @@ export function EventChip({
 }) {
   return (
     <span
-      className={`block w-full truncate rounded-md border px-1.5 py-0.5 text-left text-xs font-semibold ${CATEGORY_CHIP_CLASSES[category]}`}
+      className={`relative block w-full truncate rounded-md border px-1.5 py-0.5 text-left text-xs font-semibold ${CATEGORY_CHIP_CLASSES[category]}`}
     >
       <span className="sr-only">{categoryLabel(category)}: </span>
       {title}
-      <span className="sr-only"> at {timeLabel}</span>
+      <span className="sr-only">, {timeLabel}</span>
     </span>
   );
 }

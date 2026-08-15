@@ -12,8 +12,7 @@ export const metadata: Metadata = {
 };
 
 const ADMIN_LINKS = [
-  { href: "/admin", label: "Queue" },
-  { href: "/admin/events", label: "Events" },
+  { href: "/admin", label: "Home" },
   { href: "/admin/groups", label: "Groups" },
   { href: "/admin/content", label: "Content" },
   { href: "/admin/admins", label: "Admins" },

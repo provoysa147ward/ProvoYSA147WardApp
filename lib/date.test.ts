@@ -2,17 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import {
   addCalendarDays,
-  differenceInCalendarDays,
   endsNextDay,
   formatDayLabel,
   formatTimeLabel,
   formatTimeRange,
+  formatWeekLabel,
   parseIsoDate,
   parseIsoTime,
   toIsoDate,
   toUtcIso,
   wardInstant,
   wardToday,
+  wardWallClock,
+  weekRange,
 } from "@/lib/date";
 
 // 2026 US DST boundaries: spring forward Sun 8 Mar, fall back Sun 1 Nov.
@@ -137,18 +139,6 @@ describe("addCalendarDays", () => {
   });
 });
 
-describe("differenceInCalendarDays", () => {
-  it("counts whole days across a DST boundary", () => {
-    expect(differenceInCalendarDays(FALL_BACK, "2026-10-25")).toBe(7);
-    expect(differenceInCalendarDays(SPRING_FORWARD, "2026-03-01")).toBe(7);
-  });
-
-  it("is zero for the same date and negative when reversed", () => {
-    expect(differenceInCalendarDays("2026-08-07", "2026-08-07")).toBe(0);
-    expect(differenceInCalendarDays("2026-08-07", "2026-08-14")).toBe(-7);
-  });
-});
-
 describe("wardToday", () => {
   it("reports the Denver date, not the UTC date, late in the evening", () => {
     // 01:30 UTC on the 8th is 19:30 on the 7th in Denver.
@@ -213,9 +203,105 @@ describe("formatTimeRange", () => {
     expect(formatTimeRange("19:00", "21:00")).toBe("7:00 PM – 9:00 PM");
   });
 
+  it("says All day instead of a clock time for an all-day event", () => {
+    expect(formatTimeRange("00:00", null, true)).toBe("All day");
+    // The flag wins even when there are times to show.
+    expect(formatTimeRange("19:00", "21:00", true)).toBe("All day");
+  });
+
   it("flags a range that runs past midnight", () => {
     expect(formatTimeRange("21:00", "00:30")).toBe(
       "9:00 PM – 12:30 AM (next day)",
     );
+  });
+});
+
+describe("weekRange", () => {
+  it("returns the Sunday-to-Saturday week containing a midweek date", () => {
+    expect(weekRange("2026-08-19")).toEqual({
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("treats a Sunday as the start of its own week", () => {
+    expect(weekRange("2026-08-16")).toEqual({
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("treats a Saturday as the end of its own week", () => {
+    expect(weekRange("2026-08-22")).toEqual({
+      from: "2026-08-16",
+      to: "2026-08-22",
+    });
+  });
+
+  it("crosses a month boundary", () => {
+    expect(weekRange("2026-09-01")).toEqual({
+      from: "2026-08-30",
+      to: "2026-09-05",
+    });
+  });
+
+  it("crosses a year boundary", () => {
+    expect(weekRange("2027-01-01")).toEqual({
+      from: "2026-12-27",
+      to: "2027-01-02",
+    });
+  });
+
+  it("is unaffected by a DST boundary inside the week", () => {
+    expect(weekRange(SPRING_FORWARD)).toEqual({
+      from: "2026-03-08",
+      to: "2026-03-14",
+    });
+    expect(weekRange(FALL_BACK)).toEqual({
+      from: "2026-11-01",
+      to: "2026-11-07",
+    });
+  });
+});
+
+describe("formatWeekLabel", () => {
+  it("collapses a week inside one month", () => {
+    expect(formatWeekLabel(weekRange("2026-08-19"))).toBe("Aug 16 – 22, 2026");
+  });
+
+  it("names both months when the week straddles one", () => {
+    expect(formatWeekLabel(weekRange("2026-09-01"))).toBe(
+      "Aug 30 – Sep 5, 2026",
+    );
+  });
+
+  it("names both years when the week straddles one", () => {
+    expect(formatWeekLabel(weekRange("2027-01-01"))).toBe(
+      "Dec 27, 2026 – Jan 2, 2027",
+    );
+  });
+});
+
+describe("wardWallClock", () => {
+  it("reads an instant off the ward's clock in summer", () => {
+    // 02:00Z on 20 August is 20:00 the previous evening in Denver (UTC-6).
+    expect(wardWallClock(new Date("2026-08-20T02:00:00Z"))).toEqual({
+      date: "2026-08-19",
+      time: "20:00",
+    });
+  });
+
+  it("reads an instant off the ward's clock in winter", () => {
+    // 02:00Z on 20 December is 19:00 the previous evening (UTC-7).
+    expect(wardWallClock(new Date("2026-12-20T02:00:00Z"))).toEqual({
+      date: "2026-12-19",
+      time: "19:00",
+    });
+  });
+
+  it("puts the same wall-clock hour on both sides of fall-back", () => {
+    // 2026 falls back on 1 November: 19:00 local is UTC-6 before, UTC-7 after.
+    expect(wardWallClock(new Date("2026-11-01T01:00:00Z")).time).toBe("19:00");
+    expect(wardWallClock(new Date("2026-11-02T02:00:00Z")).time).toBe("19:00");
   });
 });

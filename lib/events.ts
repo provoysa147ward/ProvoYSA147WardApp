@@ -1,11 +1,11 @@
 /**
- * Occurrence expansion for ward events.
+ * Occurrences of ward events.
  *
- * A weekly series is stored as a single row and expanded at read time, so an
- * edit to the series touches one row and one Google Calendar patch. Expansion
- * walks calendar dates and re-resolves the ward's UTC offset for each one (see
- * `lib/date.ts`), which is what makes a 7 PM series stay at 7 PM across a DST
- * boundary.
+ * Google expands recurrence for us (`singleEvents: true`), so one event is one
+ * date and this module only has to select and order. What it still owns is the
+ * resolved instants: a wall-clock time is attached to a calendar date by
+ * `lib/date.ts`, which re-resolves the ward's UTC offset for that date, so a
+ * 7 PM event is 7 PM on either side of a DST boundary.
  *
  * Pure module: no I/O, no Supabase, no React.
  */
@@ -13,7 +13,6 @@
 import type { EventCategory } from "./categories";
 import {
   addCalendarDays,
-  differenceInCalendarDays,
   endsNextDay,
   wardInstant,
   wardToday,
@@ -22,22 +21,29 @@ import {
 } from "./date";
 
 export interface WardEvent {
+  /**
+   * The Google instance id. Not unique across a list: an all-day event
+   * covering several days is one `WardEvent` per day, all sharing it. The
+   * occurrence key is the unique handle.
+   */
   id: string;
   title: string;
   category: EventCategory;
   eventDate: IsoDate;
   startTime: IsoTime;
-  /** Null when the submitter left it blank; earlier than start means past midnight. */
+  /** Null when the event has no end; earlier than start means past midnight. */
   endTime: IsoTime | null;
   location: string;
   description: string | null;
-  repeatsWeekly: boolean;
-  /** Inclusive last date of a weekly series. Required whenever `repeatsWeekly`. */
-  repeatUntil: IsoDate | null;
+  /**
+   * An all-day event. It still carries a start time of `"00:00"` so the
+   * occurrence maths needs no special case; only the label changes.
+   */
+  allDay: boolean;
 }
 
 export interface EventOccurrence {
-  /** Stable identity for one occurrence of a possibly-recurring event. */
+  /** Stable identity for one occurrence, unique within a list. */
   key: string;
   event: WardEvent;
   date: IsoDate;
@@ -53,64 +59,24 @@ export interface EventOccurrence {
 export interface DateRange {
   /** Inclusive. */
   from: IsoDate;
-  /** Inclusive. */
-  to: IsoDate;
+  /** Inclusive. Omitted means everything from `from` onwards. */
+  to?: IsoDate;
 }
 
-/** Weekly series are capped at one year by validation; the horizon mirrors that. */
-export const UPCOMING_HORIZON_DAYS = 366;
-
-const DAYS_PER_WEEK = 7;
-
-/**
- * Every occurrence of `event` whose date falls inside `range`, in date order.
- *
- * The range is always the outer bound, so a series whose `repeatUntil` is
- * missing — which validation rejects, but bad data should not hang a page —
- * still terminates.
- */
-export function expandEvent(
-  event: WardEvent,
-  range: DateRange,
-): EventOccurrence[] {
-  if (range.to < range.from) return [];
-
-  if (!event.repeatsWeekly) {
-    const inRange =
-      event.eventDate >= range.from && event.eventDate <= range.to;
-    return inRange ? [occurrenceOn(event, event.eventDate)] : [];
-  }
-
-  const lastDate =
-    event.repeatUntil && event.repeatUntil < range.to
-      ? event.repeatUntil
-      : range.to;
-
-  // Jump straight to the first occurrence inside the range instead of walking
-  // every week since the series began.
-  const weeksToSkip = Math.max(
-    0,
-    Math.ceil(
-      differenceInCalendarDays(range.from, event.eventDate) / DAYS_PER_WEEK,
-    ),
-  );
-
-  const occurrences: EventOccurrence[] = [];
-  let date = addCalendarDays(event.eventDate, weeksToSkip * DAYS_PER_WEEK);
-  while (date <= lastDate) {
-    occurrences.push(occurrenceOn(event, date));
-    date = addCalendarDays(date, DAYS_PER_WEEK);
-  }
-  return occurrences;
-}
-
-/** Every occurrence of every event inside `range`, in chronological order. */
-export function expandEvents(
+/** Every occurrence inside `range`, in chronological order. */
+export function occurrencesInRange(
   events: readonly WardEvent[],
   range: DateRange,
 ): EventOccurrence[] {
+  if (range.to !== undefined && range.to < range.from) return [];
+
   return events
-    .flatMap((event) => expandEvent(event, range))
+    .filter(
+      (event) =>
+        event.eventDate >= range.from &&
+        (range.to === undefined || event.eventDate <= range.to),
+    )
+    .map(occurrenceOn)
     .sort(compareOccurrences);
 }
 
@@ -127,24 +93,21 @@ export function upcomingOccurrences(
   events: readonly WardEvent[],
   { now = new Date(), limit }: UpcomingOptions = {},
 ): EventOccurrence[] {
-  const today = wardToday(now);
   // Reach back one day so an event that started yesterday and runs past
   // midnight is still considered; the end-time filter below is what actually
   // decides whether it counts as upcoming.
-  const range = {
-    from: addCalendarDays(today, -1),
-    to: addCalendarDays(today, UPCOMING_HORIZON_DAYS),
-  };
+  const from = addCalendarDays(wardToday(now), -1);
   const cutoff = now.getTime();
 
-  const upcoming = expandEvents(events, range).filter(
+  const upcoming = occurrencesInRange(events, { from }).filter(
     (occurrence) => occurrence.end.getTime() > cutoff,
   );
 
   return limit === undefined ? upcoming : upcoming.slice(0, limit);
 }
 
-function occurrenceOn(event: WardEvent, date: IsoDate): EventOccurrence {
+function occurrenceOn(event: WardEvent): EventOccurrence {
+  const { eventDate: date } = event;
   const spillsOver = endsNextDay(event.startTime, event.endTime);
   const nextDay = addCalendarDays(date, 1);
 

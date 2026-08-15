@@ -21,7 +21,7 @@ export function AgendaList({
   occurrences,
   onSelect,
   today,
-  emptyMessage = "Nothing scheduled yet — suggest an event!",
+  emptyMessage = "Nothing scheduled yet.",
 }: {
   occurrences: readonly EventOccurrence[];
   onSelect: (selection: CalendarSelection) => void;
@@ -66,10 +66,12 @@ export function AgendaList({
                       {formatTimeRange(
                         occurrence.event.startTime,
                         occurrence.event.endTime,
+                        occurrence.event.allDay,
                       )}
                     </time>
-                    {" · "}
-                    {occurrence.event.location}
+                    {occurrence.event.location
+                      ? ` · ${occurrence.event.location}`
+                      : null}
                   </p>
                 </button>
               </li>
