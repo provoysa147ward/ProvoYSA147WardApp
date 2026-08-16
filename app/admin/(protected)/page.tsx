@@ -4,9 +4,9 @@ import { ButtonLink } from "@/components/ui/Button";
  * The admin landing.
  *
  * Events are not managed here any more — they live in the ward's Google
- * Calendar, which is the tool leaders already use. What is left on this site is
- * everything Google has no opinion about: groups, page content, and who counts
- * as an admin.
+ * Calendar, which is the tool leaders already use. Groups are not managed here
+ * either: they are edited on `/groups`, on the cards themselves. What is left
+ * is page content, who counts as an admin, and the pointers to both.
  */
 export default function AdminDashboard() {
   return (
@@ -36,9 +36,13 @@ export default function AdminDashboard() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold tracking-tight">Managed here</h2>
+        <p className="max-w-prose text-ink-muted">
+          Groups are edited on the groups page itself — while you&apos;re signed
+          in, every card there has Edit and Delete on it.
+        </p>
         <ul className="flex flex-wrap gap-2">
           <li>
-            <ButtonLink href="/admin/groups" variant="secondary">
+            <ButtonLink href="/groups" variant="secondary">
               Groups
             </ButtonLink>
           </li>

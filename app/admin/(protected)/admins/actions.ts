@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { guardMessage } from "@/lib/adminActionSupport";
+import type { AdminActionState } from "@/lib/adminActionState";
 import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
 import { adminEmailSchema } from "@/lib/validation/admin";
-
-import type { AdminActionState } from "../action-state";
 
 export async function addAdminEmail(
   _previous: AdminActionState,

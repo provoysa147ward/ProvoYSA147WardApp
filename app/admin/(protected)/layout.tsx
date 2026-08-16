@@ -13,7 +13,6 @@ export const metadata: Metadata = {
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Home" },
-  { href: "/admin/groups", label: "Groups" },
   { href: "/admin/content", label: "Content" },
   { href: "/admin/admins", label: "Admins" },
 ] as const;
@@ -31,6 +30,10 @@ const ADMIN_LINKS = [
  * signed-out admin has to be able to reach — does not inherit it. Any new
  * admin page belongs inside this group; anything that must stay reachable
  * without a session belongs beside it.
+ *
+ * Group editing is the deliberate exception: it happens on the public
+ * `/groups` page, so `saveGroup`/`deleteGroup` live outside this group. They
+ * lose nothing by it — this layout never guarded an action, only a render.
  */
 export default async function AdminLayout({
   children,

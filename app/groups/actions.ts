@@ -3,17 +3,28 @@
 import { revalidatePath } from "next/cache";
 
 import { guardMessage } from "@/lib/adminActionSupport";
+import type { AdminActionState } from "@/lib/adminActionState";
 import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
 import { groupSchema } from "@/lib/validation/admin";
 
-import type { AdminActionState } from "../action-state";
+/**
+ * The group mutations, which sit beside the public page that renders their
+ * forms rather than inside the `(protected)` route group.
+ *
+ * That costs nothing in safety: a server action is an independently-invocable
+ * POST endpoint, so the layout it renders under never guarded it — the
+ * `requireAdmin()` call at the top of each action and RLS underneath are what
+ * do, and both are unchanged.
+ */
 
 const PHOTO_BUCKET = "group-photos";
 
+/** The message for a row that another admin deleted while this one was editing. */
+const VANISHED = "That group no longer exists — reload the page.";
+
 function revalidateGroups() {
   revalidatePath("/groups");
-  revalidatePath("/admin/groups");
 }
 
 function readGroupForm(formData: FormData) {
@@ -97,9 +108,12 @@ export async function saveGroup(
 
   const id = String(formData.get("id") ?? "");
   const supabase = await createClient();
-  const { error } = id
-    ? await supabase.from("groups").update(row).eq("id", id)
-    : await supabase.from("groups").insert(row);
+  // `.select("id")` on the update so a write that matched nothing can be told
+  // apart from a write that landed: without it PostgREST reports success for
+  // a row another admin has already deleted.
+  const { data, error } = id
+    ? await supabase.from("groups").update(row).eq("id", id).select("id")
+    : await supabase.from("groups").insert(row).select("id");
 
   if (error) {
     return {
@@ -107,6 +121,10 @@ export async function saveGroup(
       errors: {},
       formError: `Could not save that: ${error.message}`,
     };
+  }
+
+  if (id && (data ?? []).length === 0) {
+    return { status: "error", errors: {}, formError: VANISHED };
   }
 
   revalidateGroups();
@@ -128,10 +146,11 @@ export async function deleteGroup(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("groups")
     .delete()
-    .eq("id", String(formData.get("id") ?? ""));
+    .eq("id", String(formData.get("id") ?? ""))
+    .select("id");
 
   if (error) {
     return {
@@ -139,6 +158,10 @@ export async function deleteGroup(
       errors: {},
       formError: `Could not delete that: ${error.message}`,
     };
+  }
+
+  if ((data ?? []).length === 0) {
+    return { status: "error", errors: {}, formError: VANISHED };
   }
 
   revalidateGroups();

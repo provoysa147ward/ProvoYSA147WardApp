@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 
 import { guardMessage } from "@/lib/adminActionSupport";
+import type { AdminActionState } from "@/lib/adminActionState";
 import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
 import { quickLinkSchema, siteSettingsSchema } from "@/lib/validation/admin";
-
-import type { AdminActionState } from "../action-state";
 
 function revalidateContent() {
   revalidatePath("/");

@@ -96,11 +96,12 @@ test("an admin lands on a page that points at Google Calendar", async ({
     page.getByRole("link", { name: /Open Google Calendar/ }),
   ).toBeVisible();
 
-  // The retired event screens are gone from the admin nav.
+  // The retired screens are gone from the admin nav — events to Google
+  // Calendar, groups to the public page they are edited on.
   const nav = page.getByRole("navigation", { name: "Admin" });
   await expect(nav.getByRole("link", { name: "Events" })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: "Queue" })).toHaveCount(0);
-  await expect(nav.getByRole("link", { name: "Groups" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Groups" })).toHaveCount(0);
 });
 
 test("a non-allowlisted address gets the same reply and no email", async ({

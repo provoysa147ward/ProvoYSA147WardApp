@@ -10,7 +10,7 @@ import {
 import {
   INITIAL_ADMIN_ACTION_STATE,
   type AdminActionState,
-} from "@/app/admin/(protected)/action-state";
+} from "@/lib/adminActionState";
 import { Field, inputClasses } from "@/components/forms/Field";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
