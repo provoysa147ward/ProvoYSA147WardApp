@@ -19,6 +19,13 @@ import { createClient } from "@/lib/supabase/server";
  * The old `#access_token` fragment flow is deliberately not supported: a URL
  * fragment never reaches the server, so the exchange could not stay server-side.
  */
+
+/**
+ * Where a signed-in admin lands: the groups page, which is the thing they
+ * almost always came to edit and which now shows its controls the moment they
+ * are signed in. `/admin` is still one click away in the footer.
+ */
+const LANDING = "/groups";
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const tokenHash = searchParams.get("token_hash");
@@ -34,12 +41,12 @@ export async function GET(request: NextRequest) {
     });
     // A used or expired link is by far the most common failure, so it gets a
     // friendly page with a resend button rather than a raw error.
-    redirect(error ? "/admin/login?error=expired" : "/admin");
+    redirect(error ? "/admin/login?error=expired" : LANDING);
   }
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    redirect(error ? "/admin/login?error=expired" : "/admin");
+    redirect(error ? "/admin/login?error=expired" : LANDING);
   }
 
   redirect("/admin/login?error=invalid");

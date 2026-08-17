@@ -6,15 +6,15 @@ import {
   canReadCalendar,
   loadWardCalendarEvents,
 } from "@/lib/google/calendarEvents";
-import type { IsoDate } from "@/lib/date";
 
 /**
  * Every public read the site does.
  *
- * Groups, quick links, and settings come from Supabase. Events come from the
- * ward's Google Calendar instead — leaders manage them there — and that read
- * is the one allowed to fail quietly: a Supabase outage is a broken site, but
- * a Google outage must only empty the events region.
+ * Groups and quick links come from Supabase. Events come from the ward's
+ * Google Calendar instead — leaders manage them there — and that read is the
+ * one allowed to fail quietly: a Supabase outage is a broken site, but a Google
+ * outage must only empty the events region. The home page's fixed text is
+ * neither: it is a set of constants in `lib/site.ts`.
  */
 
 export interface Group {
@@ -34,26 +34,6 @@ export interface QuickLink {
   url: string;
   sortOrder: number;
 }
-
-export interface SiteSettings {
-  welcomeBlurb: string;
-  sundayMeetingInfo: string;
-  announcement: string;
-  announcementExpires: IsoDate | null;
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-}
-
-export const EMPTY_SITE_SETTINGS: SiteSettings = {
-  welcomeBlurb: "",
-  sundayMeetingInfo: "",
-  announcement: "",
-  announcementExpires: null,
-  contactName: "",
-  contactEmail: "",
-  contactPhone: "",
-};
 
 export type CalendarEventsResult =
   | { ok: true; events: WardEvent[] }
@@ -118,28 +98,4 @@ export async function getQuickLinks(): Promise<QuickLink[]> {
     url: row.url,
     sortOrder: row.sort_order,
   }));
-}
-
-export async function getSiteSettings(): Promise<SiteSettings> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("site_settings")
-    .select(
-      "welcome_blurb, sunday_meeting_info, announcement, announcement_expires, contact_name, contact_email, contact_phone",
-    )
-    .eq("id", 1)
-    .maybeSingle();
-
-  if (error) throw new Error(`Could not load site settings: ${error.message}`);
-  if (!data) return EMPTY_SITE_SETTINGS;
-
-  return {
-    welcomeBlurb: data.welcome_blurb,
-    sundayMeetingInfo: data.sunday_meeting_info,
-    announcement: data.announcement,
-    announcementExpires: data.announcement_expires,
-    contactName: data.contact_name,
-    contactEmail: data.contact_email,
-    contactPhone: data.contact_phone,
-  };
 }

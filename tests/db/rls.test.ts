@@ -42,7 +42,7 @@ afterAll(async () => {
 });
 
 describe("public content tables", () => {
-  const tables = ["groups", "quick_links", "site_settings"] as const;
+  const tables = ["groups", "quick_links"] as const;
 
   it.each(tables)("lets anon read %s", async (table) => {
     const { error } = await anonClient().from(table).select("*").limit(1);
@@ -63,21 +63,41 @@ describe("public content tables", () => {
     expect(error).not.toBeNull();
   });
 
-  it("refuses a non-admin update to site_settings", async () => {
-    await member.client
-      .from("site_settings")
-      .update({ announcement: "Hijacked" })
-      .eq("id", 1);
+  it("refuses a non-admin update to groups", async () => {
+    // A row this test owns, not whichever seeded row happens to sort first: if
+    // the seed had not run, reading one back would yield undefined and every
+    // assertion below would compare undefined to undefined and pass.
+    const { data: target, error: setup } = await serviceClient()
+      .from("groups")
+      .insert({ name: "RLS Target", description: "Created in a test." })
+      .select("id, name")
+      .single();
+    expect(setup).toBeNull();
+    expect(target?.id).toBeTruthy();
+
+    // RLS filters an UPDATE rather than rejecting it: the policy's USING clause
+    // means the row is simply not visible to write, so PostgREST reports no
+    // error and no affected rows. `.select("id")` is what makes that visible —
+    // without it the call looks indistinguishable from a successful write.
+    const { data: written, error } = await member.client
+      .from("groups")
+      .update({ name: "Hijacked" })
+      .eq("id", target!.id)
+      .select("id");
+    expect(error).toBeNull();
+    expect(written).toEqual([]);
 
     const { data } = await serviceClient()
-      .from("site_settings")
-      .select("announcement")
-      .eq("id", 1)
+      .from("groups")
+      .select("name")
+      .eq("id", target!.id)
       .single();
-    expect(data?.announcement).not.toBe("Hijacked");
+    expect(data?.name).toBe("RLS Target");
+
+    await serviceClient().from("groups").delete().eq("id", target!.id);
   });
 
-  it("lets an admin write all three", async () => {
+  it("lets an admin write both", async () => {
     const group = await admin.client
       .from("groups")
       .insert({ name: "Admin Group", description: "Created in a test." })
@@ -92,33 +112,8 @@ describe("public content tables", () => {
       .single();
     expect(link.error).toBeNull();
 
-    // site_settings is a single shared row, so restore whatever was there
-    // rather than blanking it — the seeded announcement is dev data others use.
-    const { data: before } = await serviceClient()
-      .from("site_settings")
-      .select("announcement")
-      .eq("id", 1)
-      .single();
-
-    const settings = await admin.client
-      .from("site_settings")
-      .update({ announcement: "Set by an admin test." })
-      .eq("id", 1);
-    expect(settings.error).toBeNull();
-
     await serviceClient().from("groups").delete().eq("id", group.data?.id);
     await serviceClient().from("quick_links").delete().eq("id", link.data?.id);
-    await serviceClient()
-      .from("site_settings")
-      .update({ announcement: before?.announcement ?? "" })
-      .eq("id", 1);
-  });
-
-  it("enforces the single-row constraint on site_settings", async () => {
-    const { error } = await serviceClient()
-      .from("site_settings")
-      .insert({ id: 2 });
-    expect(error).not.toBeNull();
   });
 
   it("rejects a non-https quick link", async () => {

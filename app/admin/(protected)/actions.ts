@@ -3,65 +3,20 @@
 import { revalidatePath } from "next/cache";
 
 import { guardMessage } from "@/lib/adminActionSupport";
+import type { AdminActionState } from "@/lib/adminActionState";
 import { fieldErrors } from "@/lib/validation/fieldErrors";
 import { createClient, requireAdmin } from "@/lib/supabase/server";
-import { quickLinkSchema, siteSettingsSchema } from "@/lib/validation/admin";
+import { quickLinkSchema } from "@/lib/validation/admin";
 
-import type { AdminActionState } from "../action-state";
+/**
+ * The quick-link mutations, which now sit beside the dashboard that renders
+ * them: the separate `/admin/content` screen they used to live on is gone,
+ * along with the site-settings form that was the rest of it.
+ */
 
-function revalidateContent() {
+function revalidateQuickLinks() {
   revalidatePath("/");
-  revalidatePath("/admin/content");
-}
-
-export async function saveSiteSettings(
-  _previous: AdminActionState,
-  formData: FormData,
-): Promise<AdminActionState> {
-  try {
-    await requireAdmin();
-  } catch (error) {
-    return { status: "error", errors: {}, formError: guardMessage(error) };
-  }
-
-  const parsed = siteSettingsSchema.safeParse({
-    welcomeBlurb: formData.get("welcomeBlurb") ?? "",
-    sundayMeetingInfo: formData.get("sundayMeetingInfo") ?? "",
-    announcement: formData.get("announcement") ?? "",
-    announcementExpires: formData.get("announcementExpires") ?? "",
-    contactName: formData.get("contactName") ?? "",
-    contactEmail: formData.get("contactEmail") ?? "",
-    contactPhone: formData.get("contactPhone") ?? "",
-  });
-
-  if (!parsed.success) {
-    return { status: "error", errors: fieldErrors(parsed.error.issues) };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("site_settings")
-    .update({
-      welcome_blurb: parsed.data.welcomeBlurb,
-      sunday_meeting_info: parsed.data.sundayMeetingInfo,
-      announcement: parsed.data.announcement,
-      announcement_expires: parsed.data.announcementExpires,
-      contact_name: parsed.data.contactName,
-      contact_email: parsed.data.contactEmail,
-      contact_phone: parsed.data.contactPhone,
-    })
-    .eq("id", 1);
-
-  if (error) {
-    return {
-      status: "error",
-      errors: {},
-      formError: `Could not save that: ${error.message}`,
-    };
-  }
-
-  revalidateContent();
-  return { status: "success", errors: {}, message: "Saved." };
+  revalidatePath("/admin");
 }
 
 export async function saveQuickLink(
@@ -104,8 +59,12 @@ export async function saveQuickLink(
     };
   }
 
-  revalidateContent();
-  return { status: "success", errors: {}, message: id ? "Link saved." : "Link added." };
+  revalidateQuickLinks();
+  return {
+    status: "success",
+    errors: {},
+    message: id ? "Link saved." : "Link added.",
+  };
 }
 
 export async function deleteQuickLink(
@@ -132,6 +91,6 @@ export async function deleteQuickLink(
     };
   }
 
-  revalidateContent();
+  revalidateQuickLinks();
   return { status: "success", errors: {}, message: "Link deleted." };
 }

@@ -7,9 +7,18 @@ minutes.
 
 **The site:** https://provoysa147ward.vercel.app — admin area at `/admin`.
 
-**The two rules:** events are managed in the ward's **Google Calendar**, and
-everything else on the site is edited **on the site**, at `/admin`. You should
-never need to change code to change content.
+**Where everything is edited:**
+
+| What | Where |
+|---|---|
+| Events | The ward's **Google Calendar** |
+| Groups | The **groups page itself** — sign in, and every card grows Edit and Delete |
+| Quick links, admins | `/admin` |
+| The home page's fixed text | In the code, `lib/site.ts` — a developer and a deploy |
+
+The first three need no developer, ever. Only the last one does, and it is
+three sentences that have not changed since the site launched. Sign-in is the
+small **Admin** link at the very bottom of every page.
 
 ---
 
@@ -216,8 +225,8 @@ Sign-in links will not work until those two are right.
 ### 5. Google Calendar — required for events to appear
 
 **Every event on the site comes from the ward's Google Calendar.** Without the
-three variables below the site works — announcements, groups, quick links,
-admin — but the events region says the calendar isn't loading.
+three variables below the site works — groups, quick links, admin — but the
+events region says the calendar isn't loading.
 
 1. Sign in to Google **as the ward account**. Create a calendar for the ward
    and note its Calendar ID (Calendar settings → Integrate calendar).
@@ -279,10 +288,28 @@ test enforces that.
 The site shows roughly three months back and just over a year ahead. Anything
 outside that window shows the normal empty state.
 
+### Managing groups on the groups page
+
+Sign in through the **Admin** link in the site footer. You land back on
+`/groups`, and from then on every card there has **Edit** and **Delete** on it,
+with an **Add group** button above the grid. Each opens the same small form —
+name, description, emoji or photo, when and where, GroupMe link, and the order
+they appear in.
+
+Nobody signed out ever sees any of it; the page looks exactly as it always did.
+
+### Changing the home page's fixed text
+
+The welcome line, the optional Sunday meeting line, and the announcement banner
+are constants at the top of `lib/site.ts`. Editing them is a code change and a
+deploy — that is deliberate, since in practice they never change. An empty
+`ANNOUNCEMENT` means no banner at all.
+
 ### Adding and removing admins
 
-`/admin/admins`. Add someone by email and tell them to go to `/admin` and enter
-that exact address — there is no invitation to accept and no password.
+`/admin/admins`. Add someone by email and tell them to open the **Admin** link
+in the footer and enter that exact address — there is no invitation to accept
+and no password.
 
 Removing **yourself** works and signs you out immediately. The ward's permanent
 address has no Remove button at all.
@@ -340,11 +367,15 @@ weakest one wins:
 1. `proxy.ts` — redirects signed-out visitors away from `/admin/*`. Convenience
    only. A proxy check can be bypassed with a crafted header
    (CVE-2025-29927), so nothing may depend on it alone.
-2. `app/admin/(protected)/layout.tsx` — the authoritative page-level check.
-   Anything that must be admin-only belongs inside that route group.
+2. `app/admin/(protected)/layout.tsx` — the authoritative check for admin
+   *pages*. Anything that must be admin-only to look at belongs in that group.
 3. `requireAdmin()` inside **every** admin server action. Actions are
    independently invocable POST endpoints; the form being admin-only says
-   nothing about who can post to it.
+   nothing about who can post to it. This is why the group actions can live
+   outside the `(protected)` group, in `app/groups/actions.ts`, beside the
+   public page whose forms submit to them — layer 2 never guarded an action,
+   only a render. `checkAdmin()` on `/groups` decides what to draw and nothing
+   more.
 4. Row-level security in the database. The final boundary: a non-admin session
    cannot write anything even when calling the API directly.
 
@@ -377,6 +408,34 @@ had to happen in, in case anything like it is ever done again:
    `supabase/migrations/0002_drop_events.sql`, which drops the `events` table
    and its public view. That step is irreversible, which is why it is last.
 
+### Release runbook for a destructive migration
+
+Migrations 0002 and 0003 both drop a table the previously-deployed code reads.
+The database and the deployed code are two systems that change separately, so
+the order is not a detail — get it backwards and the live site errors until the
+deploy lands. Any future drop follows the same five steps:
+
+1. **Record anything the drop destroys that lives nowhere else.** For 0003 that
+   is the `contact_*` columns; the migration's comment carries the query. Put
+   what you find under "Who to ask" below, and commit it.
+2. **Merge and deploy the code** that no longer reads the table.
+3. **Confirm the deployed site works** — load the home page and `/groups` on
+   the real URL, not just locally.
+4. **Only now** run `npx supabase db push`.
+5. **Reload the site again.** If step 4 broke something, this is where you find
+   out, and rolling the deploy back is still the fastest fix.
+
+Steps 2 and 4 are the whole point: the old code reads the table on every
+home-page render, so pushing first turns the home page into a 500 until the
+deploy catches up. `supabase db push` is irreversible — there is no undo.
+
+### Who to ask
+
+_Not yet recorded._ Whoever runs migration 0003 fills this in from the
+production `site_settings` row before dropping it (step 1 above). Until then
+the ward's own email address, which owns every account in section 1, is the
+contact of record.
+
 ### Local development
 
 See [`README.md`](../README.md).
@@ -393,6 +452,6 @@ running any test suite. The file carries a comment saying so.
 |---|---|
 | `npm run test` | Pure logic and components — dates, Google event mapping, UI |
 | `npm run test:db` | The security model against a real database |
-| `npm run test:e2e` | Whole flows in a browser, including the turnover drill |
+| `npm run test:e2e` | Whole flows in a browser — the turnover drill, and adding, editing, and deleting a group on `/groups` |
 
 The last two need the local Supabase stack running.

@@ -10,16 +10,6 @@ insert into public.admin_emails (email, is_permanent) values
   ('admin@example.com', false)
 on conflict (email) do nothing;
 
-update public.site_settings set
-  welcome_blurb = 'We''re a Young Single Adult ward in Provo. Come as you are — there''s a spot for you at every one of these.',
-  sunday_meeting_info = 'Sundays at 9:00 AM · 1234 N Canyon Rd, Provo',
-  announcement = 'Ward temple night is this Thursday — meet in the foyer at 6:30 PM.',
-  announcement_expires = (current_date + 14),
-  contact_name = 'Ward Council',
-  contact_email = 'ward-email@example.com',
-  contact_phone = '(801) 555-0147'
-where id = 1;
-
 insert into public.groups (name, description, emoji, meeting_info, groupme_url, sort_order) values
   ('Volleyball', 'Pickup games every week. All skill levels — genuinely.', '🏐', 'Tuesdays 8:00 PM · Stake center gym', 'https://groupme.com/join_group/00000001', 1),
   ('Institute', 'Weeknight class and dinner beforehand.', '📖', 'Wednesdays 7:00 PM · Institute building', 'https://groupme.com/join_group/00000002', 2),

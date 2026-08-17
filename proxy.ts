@@ -7,8 +7,13 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * This is a convenience layer and nothing more. CVE-2025-29927 showed that a
  * proxy check can be skipped with a crafted header, so the real gates are
- * `app/admin/layout.tsx`, `requireAdmin()` inside every admin action, and RLS.
+ * `app/admin/(protected)/layout.tsx`, `requireAdmin()` inside every admin
+ * action, and RLS.
  * Any change here must be mirrored in all three — see docs/HANDOFF.md.
+ *
+ * Note that admin actions are not all under `/admin`: the group mutations sit
+ * beside the public `/groups` page they are submitted from. Nothing here needs
+ * to cover them — their own `requireAdmin()` call does.
  */
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

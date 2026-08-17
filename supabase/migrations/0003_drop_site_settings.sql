@@ -1,0 +1,23 @@
+-- The home page's fixed text moved into the code.
+--
+-- Welcome blurb, Sunday meeting line, and announcement banner are constants in
+-- `lib/site.ts` now. The admin screen that edited this row went with it — in a
+-- year nobody ever used it, and text that changes once a year does not need a
+-- database table, an RLS policy, and a form to maintain.
+--
+-- STOP: this drop is irreversible and it takes the `contact_*` columns with it.
+-- Those were never rendered anywhere — they existed so whoever inherits the
+-- site knows who to ask — so nothing in the app will miss them, but nothing
+-- else records them either. Before running this, read the row and copy anything
+-- in it into the "Who to ask" section of docs/HANDOFF.md:
+--
+--   select contact_name, contact_email, contact_phone from public.site_settings;
+--
+-- Then follow the release runbook in docs/HANDOFF.md §5. The short version:
+-- deploy the code FIRST and confirm the home page renders, and only then push
+-- this migration. The old code reads this table on every home-page render, so
+-- pushing first turns the home page into a 500. Same order as the 0002 flip.
+--
+-- The policies, grants, and the single-row constraint go with the table.
+
+drop table if exists public.site_settings;

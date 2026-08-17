@@ -1,6 +1,8 @@
 /**
- * Shared action state for the admin content forms. Lives outside any
- * `"use server"` module, which may only export async functions.
+ * Shared action state for every admin form. Lives outside any `"use server"`
+ * module, which may only export async functions, and outside the `(protected)`
+ * route group, because the group editor on the public `/groups` page needs it
+ * too.
  */
 
 export interface AdminActionState {

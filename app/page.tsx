@@ -12,20 +12,20 @@ import {
   wardToday,
 } from "@/lib/date";
 import { upcomingOccurrences, type EventOccurrence } from "@/lib/events";
+import { getCalendarEvents, getQuickLinks } from "@/lib/queries";
 import {
-  getCalendarEvents,
-  getQuickLinks,
-  getSiteSettings,
-  type SiteSettings,
-} from "@/lib/queries";
-import { GROUPME_JOIN_URL } from "@/lib/site";
+  ANNOUNCEMENT,
+  ANNOUNCEMENT_EXPIRES,
+  GROUPME_JOIN_URL,
+  SUNDAY_MEETING_INFO,
+  WELCOME_BLURB,
+} from "@/lib/site";
 
 /** "Coming up" is the next week; the calendar page is there for the rest. */
 const UPCOMING_DAYS = 7;
 
 export default async function Home() {
-  const [settings, calendar, quickLinks] = await Promise.all([
-    getSiteSettings(),
+  const [calendar, quickLinks] = await Promise.all([
     getCalendarEvents(),
     getQuickLinks(),
   ]);
@@ -36,7 +36,7 @@ export default async function Home() {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-10 px-4 py-10">
-      <Announcement settings={settings} />
+      <Announcement />
 
       <GroupMeBanner />
 
@@ -45,14 +45,11 @@ export default async function Home() {
           Provo YSA 147th Ward
         </h1>
 
-        <p className="max-w-prose text-lg text-ink-muted">
-          {settings.welcomeBlurb ||
-            "Welcome! This is where we keep track of what's happening in the ward."}
-        </p>
+        <p className="max-w-prose text-lg text-ink-muted">{WELCOME_BLURB}</p>
 
-        {settings.sundayMeetingInfo ? (
+        {SUNDAY_MEETING_INFO ? (
           <p className="rounded-2xl border border-line bg-surface px-4 py-3 font-semibold">
-            {settings.sundayMeetingInfo}
+            {SUNDAY_MEETING_INFO}
           </p>
         ) : null}
 
@@ -169,16 +166,11 @@ function GroupMeBanner() {
 }
 
 /** Hidden entirely when unset or past its expiry date. */
-function Announcement({ settings }: { settings: SiteSettings }) {
-  const announcement = settings.announcement.trim();
+function Announcement() {
+  const announcement = ANNOUNCEMENT.trim();
   if (!announcement) return null;
 
-  if (
-    settings.announcementExpires &&
-    settings.announcementExpires < wardToday()
-  ) {
-    return null;
-  }
+  if (ANNOUNCEMENT_EXPIRES && ANNOUNCEMENT_EXPIRES < wardToday()) return null;
 
   return (
     <aside className="rounded-2xl border border-cat-social-border bg-cat-social-bg px-4 py-3 text-cat-social-fg">
