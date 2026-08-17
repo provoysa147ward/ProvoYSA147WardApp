@@ -64,23 +64,37 @@ describe("public content tables", () => {
   });
 
   it("refuses a non-admin update to groups", async () => {
-    const { data: seeded } = await serviceClient()
+    // A row this test owns, not whichever seeded row happens to sort first: if
+    // the seed had not run, reading one back would yield undefined and every
+    // assertion below would compare undefined to undefined and pass.
+    const { data: target, error: setup } = await serviceClient()
       .from("groups")
+      .insert({ name: "RLS Target", description: "Created in a test." })
       .select("id, name")
-      .limit(1)
       .single();
+    expect(setup).toBeNull();
+    expect(target?.id).toBeTruthy();
 
-    await member.client
+    // RLS filters an UPDATE rather than rejecting it: the policy's USING clause
+    // means the row is simply not visible to write, so PostgREST reports no
+    // error and no affected rows. `.select("id")` is what makes that visible —
+    // without it the call looks indistinguishable from a successful write.
+    const { data: written, error } = await member.client
       .from("groups")
       .update({ name: "Hijacked" })
-      .eq("id", seeded?.id);
+      .eq("id", target!.id)
+      .select("id");
+    expect(error).toBeNull();
+    expect(written).toEqual([]);
 
     const { data } = await serviceClient()
       .from("groups")
       .select("name")
-      .eq("id", seeded?.id)
+      .eq("id", target!.id)
       .single();
-    expect(data?.name).toBe(seeded?.name);
+    expect(data?.name).toBe("RLS Target");
+
+    await serviceClient().from("groups").delete().eq("id", target!.id);
   });
 
   it("lets an admin write both", async () => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useRef, useState } from "react";
+import { useActionState, useEffect, useId, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { deleteGroup, saveGroup } from "@/app/groups/actions";
@@ -9,8 +9,10 @@ import {
   type AdminActionState,
 } from "@/lib/adminActionState";
 import { Field, inputClasses } from "@/components/forms/Field";
+import { ErrorBanner } from "@/components/ui/Banner";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useDialog } from "@/components/ui/useDialog";
 import type { Group } from "@/lib/queries";
 
 /**
@@ -24,7 +26,7 @@ import type { Group } from "@/lib/queries";
 
 /** The "Add group" control, above the grid. One dialog, no group to edit. */
 export function AddGroupButton() {
-  return <GroupEditor trigger="Add group" />;
+  return <GroupEditor />;
 }
 
 /**
@@ -43,7 +45,7 @@ export function GroupCardControls({ group }: { group: Group }) {
   return (
     <div className="mt-auto flex flex-col gap-2 border-t border-line pt-3">
       <div className="flex flex-wrap gap-2">
-        <GroupEditor group={group} trigger="Edit" />
+        <GroupEditor group={group} />
         <ConfirmDialog
           trigger="Delete"
           title={`Delete "${group.name}"?`}
@@ -56,12 +58,7 @@ export function GroupCardControls({ group }: { group: Group }) {
       </div>
 
       {deleteState.formError ? (
-        <p
-          role="alert"
-          className="rounded-xl border border-accent bg-accent-soft px-4 py-2 text-sm font-semibold text-accent"
-        >
-          {deleteState.formError}
-        </p>
+        <ErrorBanner message={deleteState.formError} />
       ) : null}
     </div>
   );
@@ -76,28 +73,18 @@ export function GroupCardControls({ group }: { group: Group }) {
  * values, field errors, and the action state together, so reopening starts
  * clean with no reset machinery to get wrong.
  */
-export function GroupEditor({
-  group,
-  trigger,
-}: {
-  group?: Group;
-  trigger: string;
-}) {
-  const [open, setOpen] = useState(false);
+export function GroupEditor({ group }: { group?: Group }) {
+  const dialog = useDialog();
   // What the last successful save was, kept outside the dialog so it survives
   // the form unmounting and can still be announced.
-  const [announcement, setAnnouncement] = useState("");
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [savedMessage, setSavedMessage] = useState("");
   // A page holds one of these per card, so the heading id has to be unique or
   // every dialog's aria-labelledby resolves to the first one's title.
   const headingId = useId();
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+  // Editing an existing group and adding a new one are the same dialog; which
+  // one it is follows from `group` alone, so nothing else has to be told.
+  const label = group ? "Edit" : "Add group";
 
   return (
     <>
@@ -107,29 +94,28 @@ export function GroupEditor({
       <Button
         type="button"
         variant={group ? "secondary" : "primary"}
-        aria-label={group ? `${trigger} ${group.name}` : undefined}
+        aria-label={group ? `${label} ${group.name}` : undefined}
         onClick={() => {
-          setAnnouncement("");
-          setOpen(true);
+          setSavedMessage("");
+          dialog.show();
         }}
       >
-        {trigger}
+        {label}
       </Button>
 
       <dialog
-        ref={dialogRef}
-        onClose={() => setOpen(false)}
+        {...dialog.dialogProps}
         aria-labelledby={headingId}
         className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink backdrop:bg-ink/40"
       >
-        {open ? (
+        {dialog.open ? (
           <GroupForm
             group={group}
             headingId={headingId}
-            onCancel={() => setOpen(false)}
+            onCancel={dialog.hide}
             onSaved={(message) => {
-              setAnnouncement(message);
-              setOpen(false);
+              setSavedMessage(message);
+              dialog.hide();
             }}
           />
         ) : null}
@@ -138,7 +124,7 @@ export function GroupEditor({
       {/* The grid behind the dialog is the real confirmation; this is the same
           news for anyone who cannot see it re-render. */}
       <p role="status" className="sr-only">
-        {announcement}
+        {savedMessage}
       </p>
     </>
   );
@@ -176,14 +162,7 @@ function GroupForm({
 
       {group ? <input type="hidden" name="id" value={group.id} /> : null}
 
-      {state.formError ? (
-        <p
-          role="alert"
-          className="rounded-xl border border-accent bg-accent-soft px-4 py-2 text-sm font-semibold text-accent"
-        >
-          {state.formError}
-        </p>
-      ) : null}
+      {state.formError ? <ErrorBanner message={state.formError} /> : null}
 
       <Field id={fieldId("name")} label="Name" error={state.errors.name} required>
         {(props) => (

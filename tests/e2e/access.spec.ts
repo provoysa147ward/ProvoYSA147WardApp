@@ -52,6 +52,12 @@ test("an admin removed mid-session gets 403 and a way to sign out", async ({
 
   await db().from("admin_emails").delete().eq("email", OUTSIDER);
 
+  // The groups page is the other thing they had access to a moment ago. It
+  // stays reachable — it is public — but it drops back to the plain view.
+  await page.goto("/groups");
+  await expect(page.getByRole("heading", { name: "Volleyball" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add group" })).toHaveCount(0);
+
   const response = await page.goto("/admin");
   expect(response?.status()).toBe(403);
   await expect(

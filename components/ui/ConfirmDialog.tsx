@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 
 import { Button } from "./Button";
+import { useDialog } from "./useDialog";
 
 /**
  * A destructive action behind a native `<dialog>` confirmation.
@@ -25,28 +26,19 @@ export function ConfirmDialog({
   action: (formData: FormData) => void;
   children?: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialog = useDialog();
   // A page can hold many of these (one per row), so the heading id has to be
   // unique or every dialog's aria-labelledby resolves to the first one's title.
   const headingId = useId();
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
-
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+      <Button type="button" variant="secondary" onClick={dialog.show}>
         {trigger}
       </Button>
 
       <dialog
-        ref={dialogRef}
-        onClose={() => setOpen(false)}
+        {...dialog.dialogProps}
         aria-labelledby={headingId}
         className="m-auto w-[min(28rem,calc(100vw-2rem))] rounded-2xl border border-line bg-surface p-0 text-ink backdrop:bg-ink/40"
       >
@@ -60,7 +52,7 @@ export function ConfirmDialog({
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setOpen(false)}
+              onClick={dialog.hide}
               autoFocus
             >
               Cancel

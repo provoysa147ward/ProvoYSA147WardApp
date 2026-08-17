@@ -12,6 +12,7 @@ import {
   type AdminActionState,
 } from "@/lib/adminActionState";
 import { Field, inputClasses } from "@/components/forms/Field";
+import { Banner } from "@/components/ui/Banner";
 import { Button } from "@/components/ui/Button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import type { QuickLink } from "@/lib/queries";
@@ -51,30 +52,6 @@ export function QuickLinksManager({ links }: { links: QuickLink[] }) {
       )}
     </section>
   );
-}
-
-function Banner({ state }: { state: AdminActionState }) {
-  if (state.formError) {
-    return (
-      <p
-        role="alert"
-        className="rounded-xl border border-accent bg-accent-soft px-4 py-2 text-sm font-semibold text-accent"
-      >
-        {state.formError}
-      </p>
-    );
-  }
-  if (state.status === "success" && state.message) {
-    return (
-      <p
-        role="status"
-        className="rounded-xl border border-cat-sports-border bg-cat-sports-bg px-4 py-2 text-sm font-semibold text-cat-sports-fg"
-      >
-        {state.message}
-      </p>
-    );
-  }
-  return null;
 }
 
 function QuickLinkForm({ link }: { link?: QuickLink }) {

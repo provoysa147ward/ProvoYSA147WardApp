@@ -408,13 +408,33 @@ had to happen in, in case anything like it is ever done again:
    `supabase/migrations/0002_drop_events.sql`, which drops the `events` table
    and its public view. That step is irreversible, which is why it is last.
 
-### Retiring the site-settings table (same order, same reason)
+### Release runbook for a destructive migration
 
-`supabase/migrations/0003_drop_site_settings.sql` drops the table the home
-page's text used to come from. It follows the same rule as 0002: **deploy the
-code first, then push the migration.** The old code reads that table on every
+Migrations 0002 and 0003 both drop a table the previously-deployed code reads.
+The database and the deployed code are two systems that change separately, so
+the order is not a detail — get it backwards and the live site errors until the
+deploy lands. Any future drop follows the same five steps:
+
+1. **Record anything the drop destroys that lives nowhere else.** For 0003 that
+   is the `contact_*` columns; the migration's comment carries the query. Put
+   what you find under "Who to ask" below, and commit it.
+2. **Merge and deploy the code** that no longer reads the table.
+3. **Confirm the deployed site works** — load the home page and `/groups` on
+   the real URL, not just locally.
+4. **Only now** run `npx supabase db push`.
+5. **Reload the site again.** If step 4 broke something, this is where you find
+   out, and rolling the deploy back is still the fastest fix.
+
+Steps 2 and 4 are the whole point: the old code reads the table on every
 home-page render, so pushing first turns the home page into a 500 until the
-deploy catches up.
+deploy catches up. `supabase db push` is irreversible — there is no undo.
+
+### Who to ask
+
+_Not yet recorded._ Whoever runs migration 0003 fills this in from the
+production `site_settings` row before dropping it (step 1 above). Until then
+the ward's own email address, which owns every account in section 1, is the
+contact of record.
 
 ### Local development
 
