@@ -7,9 +7,18 @@ minutes.
 
 **The site:** https://provoysa147ward.vercel.app — admin area at `/admin`.
 
-**The two rules:** events are managed in the ward's **Google Calendar**, and
-everything else on the site is edited **on the site**, at `/admin`. You should
-never need to change code to change content.
+**Where everything is edited:**
+
+| What | Where |
+|---|---|
+| Events | The ward's **Google Calendar** |
+| Groups | The **groups page itself** — sign in, and every card grows Edit and Delete |
+| Quick links, admins | `/admin` |
+| The home page's fixed text | In the code, `lib/site.ts` — a developer and a deploy |
+
+The first three need no developer, ever. Only the last one does, and it is
+three sentences that have not changed since the site launched. Sign-in is the
+small **Admin** link at the very bottom of every page.
 
 ---
 
@@ -216,8 +225,8 @@ Sign-in links will not work until those two are right.
 ### 5. Google Calendar — required for events to appear
 
 **Every event on the site comes from the ward's Google Calendar.** Without the
-three variables below the site works — announcements, groups, quick links,
-admin — but the events region says the calendar isn't loading.
+three variables below the site works — groups, quick links, admin — but the
+events region says the calendar isn't loading.
 
 1. Sign in to Google **as the ward account**. Create a calendar for the ward
    and note its Calendar ID (Calendar settings → Integrate calendar).
@@ -279,10 +288,28 @@ test enforces that.
 The site shows roughly three months back and just over a year ahead. Anything
 outside that window shows the normal empty state.
 
+### Managing groups on the groups page
+
+Sign in through the **Admin** link in the site footer. You land back on
+`/groups`, and from then on every card there has **Edit** and **Delete** on it,
+with an **Add group** button above the grid. Each opens the same small form —
+name, description, emoji or photo, when and where, GroupMe link, and the order
+they appear in.
+
+Nobody signed out ever sees any of it; the page looks exactly as it always did.
+
+### Changing the home page's fixed text
+
+The welcome line, the optional Sunday meeting line, and the announcement banner
+are constants at the top of `lib/site.ts`. Editing them is a code change and a
+deploy — that is deliberate, since in practice they never change. An empty
+`ANNOUNCEMENT` means no banner at all.
+
 ### Adding and removing admins
 
-`/admin/admins`. Add someone by email and tell them to go to `/admin` and enter
-that exact address — there is no invitation to accept and no password.
+`/admin/admins`. Add someone by email and tell them to open the **Admin** link
+in the footer and enter that exact address — there is no invitation to accept
+and no password.
 
 Removing **yourself** works and signs you out immediately. The ward's permanent
 address has no Remove button at all.
@@ -340,11 +367,15 @@ weakest one wins:
 1. `proxy.ts` — redirects signed-out visitors away from `/admin/*`. Convenience
    only. A proxy check can be bypassed with a crafted header
    (CVE-2025-29927), so nothing may depend on it alone.
-2. `app/admin/(protected)/layout.tsx` — the authoritative page-level check.
-   Anything that must be admin-only belongs inside that route group.
+2. `app/admin/(protected)/layout.tsx` — the authoritative check for admin
+   *pages*. Anything that must be admin-only to look at belongs in that group.
 3. `requireAdmin()` inside **every** admin server action. Actions are
    independently invocable POST endpoints; the form being admin-only says
-   nothing about who can post to it.
+   nothing about who can post to it. This is why the group actions can live
+   outside the `(protected)` group, in `app/groups/actions.ts`, beside the
+   public page whose forms submit to them — layer 2 never guarded an action,
+   only a render. `checkAdmin()` on `/groups` decides what to draw and nothing
+   more.
 4. Row-level security in the database. The final boundary: a non-admin session
    cannot write anything even when calling the API directly.
 
@@ -377,6 +408,14 @@ had to happen in, in case anything like it is ever done again:
    `supabase/migrations/0002_drop_events.sql`, which drops the `events` table
    and its public view. That step is irreversible, which is why it is last.
 
+### Retiring the site-settings table (same order, same reason)
+
+`supabase/migrations/0003_drop_site_settings.sql` drops the table the home
+page's text used to come from. It follows the same rule as 0002: **deploy the
+code first, then push the migration.** The old code reads that table on every
+home-page render, so pushing first turns the home page into a 500 until the
+deploy catches up.
+
 ### Local development
 
 See [`README.md`](../README.md).
@@ -393,6 +432,6 @@ running any test suite. The file carries a comment saying so.
 |---|---|
 | `npm run test` | Pure logic and components — dates, Google event mapping, UI |
 | `npm run test:db` | The security model against a real database |
-| `npm run test:e2e` | Whole flows in a browser, including the turnover drill |
+| `npm run test:e2e` | Whole flows in a browser — the turnover drill, and adding, editing, and deleting a group on `/groups` |
 
 The last two need the local Supabase stack running.

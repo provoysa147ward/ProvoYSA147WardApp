@@ -228,7 +228,7 @@ renders admin UI. No edit-mode framework, no client-side auth.
 
 ### Phase 3: Footer sign-in entry, /groups landing, e2e + docs
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Discreet footer "Admin" link; post-sign-in redirect to `/groups`;
   e2e helpers and specs updated; new e2e coverage for inline editing
   visibility; handoff docs rewritten to the new admin scope.

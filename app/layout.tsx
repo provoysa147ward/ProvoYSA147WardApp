@@ -73,11 +73,21 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
 
         <footer className="border-t border-line bg-surface">
-          <div className="mx-auto max-w-4xl px-4 py-6 text-sm text-ink-muted">
+          <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-6 text-sm text-ink-muted">
             <p>
               This is an unofficial site maintained by members of the Provo YSA
               147th Ward. It is not an official publication of The Church of
               Jesus Christ of Latter-day Saints.
+            </p>
+
+            {/* How an admin finds the sign-in page at all. Deliberately plain
+                and always shown: making it session-aware would mean reading
+                cookies in the root layout on every request, for every
+                visitor, to save an admin one click. */}
+            <p>
+              <Link href="/admin" className="hover:text-accent">
+                Admin
+              </Link>
             </p>
           </div>
         </footer>

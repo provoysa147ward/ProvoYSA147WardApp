@@ -123,7 +123,15 @@ export async function signInAsAdmin(page: Page, email: string): Promise<void> {
   await page.goto(
     `/auth/confirm?token_hash=${data.properties.hashed_token}&type=magiclink`,
   );
-  await page.getByText(`Signed in as ${email}`).waitFor();
+  await waitForAdminLanding(page);
+}
+
+/**
+ * Sign-in lands on `/groups`, so the proof that it worked is the admin control
+ * that only renders for an admin — not the admin header, which is a page away.
+ */
+async function waitForAdminLanding(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Add group" }).waitFor();
 }
 
 async function authUserExists(email: string): Promise<boolean> {
@@ -143,7 +151,7 @@ async function signInThroughEmail(page: Page, email: string): Promise<void> {
   await page.getByText("Check your email").waitFor();
 
   await page.goto(await waitForSignInLink(email));
-  await page.getByText(`Signed in as ${email}`).waitFor();
+  await waitForAdminLanding(page);
 }
 
 export async function signOut(page: Page): Promise<void> {

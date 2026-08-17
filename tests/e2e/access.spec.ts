@@ -17,10 +17,14 @@ import {
 
 const NEW_ADMIN = "e2e-newadmin@example.com";
 const OUTSIDER = "e2e-outsider@example.com";
+const NEW_GROUP = "E2E Pickleball";
 
 test.afterEach(async () => {
   await db().from("admin_emails").delete().eq("email", NEW_ADMIN);
   await db().from("admin_emails").delete().eq("email", OUTSIDER);
+  // The spec deletes this itself; this is the safety net for a run that failed
+  // partway through and left the row behind.
+  await db().from("groups").delete().eq("name", NEW_GROUP);
   await deleteAuthUser(NEW_ADMIN);
   await deleteAuthUser(OUTSIDER);
   // Put the seeded admin back if a spec removed them.
@@ -72,7 +76,7 @@ test("an expired or reused sign-in link gets a friendly resend page", async ({
   const link = await waitForSignInLink(SEEDED_ADMIN);
 
   await page.goto(link);
-  await expect(page.getByText(`Signed in as ${SEEDED_ADMIN}`)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add group" })).toBeVisible();
 
   // The same link a second time is no good.
   await page.goto(link);
@@ -84,11 +88,17 @@ test("an expired or reused sign-in link gets a friendly resend page", async ({
   ).toBeVisible();
 });
 
-test("an admin lands on a page that points at Google Calendar", async ({
-  page,
-}) => {
+test("an admin lands on the groups page, ready to edit it", async ({ page }) => {
   await signInAsAdmin(page, SEEDED_ADMIN);
 
+  await expect(page).toHaveURL(/\/groups$/);
+  await expect(page.getByRole("button", { name: "Add group" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Edit Volleyball" }),
+  ).toBeVisible();
+
+  // The dashboard is still there, one click away, and still points at Google.
+  await page.goto("/admin");
   await expect(
     page.getByRole("heading", { name: /Events live in the ward Google Calendar/ }),
   ).toBeVisible();
@@ -102,6 +112,67 @@ test("an admin lands on a page that points at Google Calendar", async ({
   await expect(nav.getByRole("link", { name: "Events" })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: "Queue" })).toHaveCount(0);
   await expect(nav.getByRole("link", { name: "Groups" })).toHaveCount(0);
+});
+
+test("the groups page offers a visitor no way to change anything", async ({
+  page,
+}) => {
+  await page.goto("/groups");
+
+  await expect(page.getByRole("heading", { name: "Volleyball" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add group" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Delete" })).toHaveCount(0);
+});
+
+test("the footer offers a way in, and it leads to sign-in", async ({ page }) => {
+  await page.goto("/");
+
+  await page
+    .getByRole("contentinfo")
+    .getByRole("link", { name: "Admin" })
+    .click();
+
+  await expect(page).toHaveURL(/\/admin\/login/);
+  await expect(
+    page.getByRole("button", { name: "Email me a sign-in link" }),
+  ).toBeVisible();
+});
+
+test("an admin adds and edits a group without leaving the page", async ({
+  page,
+}) => {
+  await signInAsAdmin(page, SEEDED_ADMIN);
+
+  // Add it.
+  await page.getByRole("button", { name: "Add group" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel(/^Name/).fill(NEW_GROUP);
+  await dialog.getByLabel(/^Description/).fill("Created by the e2e suite.");
+  await dialog.getByLabel(/^When and where/).fill("Thursdays, whenever");
+  await dialog.getByRole("button", { name: "Add group" }).click();
+
+  const card = page
+    .locator("article")
+    .filter({ has: page.getByRole("heading", { name: NEW_GROUP }) });
+  await expect(card).toBeVisible();
+  await expect(card.getByText("Thursdays, whenever")).toBeVisible();
+
+  // Edit it, in place, from the card itself.
+  await card.getByRole("button", { name: `Edit ${NEW_GROUP}` }).click();
+  await dialog.getByLabel(/^When and where/).fill("Fridays instead");
+  await dialog.getByRole("button", { name: "Save changes" }).click();
+
+  await expect(card.getByText("Fridays instead")).toBeVisible();
+  await expect(dialog).toBeHidden();
+
+  // Delete it, which is also the cleanup.
+  await card.getByRole("button", { name: "Delete" }).click();
+  await page.getByRole("button", { name: "Delete it" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: NEW_GROUP }),
+  ).toHaveCount(0);
 });
 
 test("a non-allowlisted address gets the same reply and no email", async ({
