@@ -62,53 +62,6 @@ export const quickLinkSchema = z.object({
 
 export type QuickLinkInput = z.infer<typeof quickLinkSchema>;
 
-export const siteSettingsSchema = z.object({
-  welcomeBlurb: z
-    .string()
-    .trim()
-    .max(2000, "Welcome blurb must be 2000 characters or fewer.")
-    .default(""),
-  sundayMeetingInfo: z
-    .string()
-    .trim()
-    .max(200, "Meeting info must be 200 characters or fewer.")
-    .default(""),
-  // An empty announcement is how the banner is hidden.
-  announcement: z
-    .string()
-    .trim()
-    .max(500, "Announcement must be 500 characters or fewer.")
-    .default(""),
-  announcementExpires: z
-    .string()
-    .trim()
-    .transform((value) => (value === "" ? null : value))
-    .nullable()
-    .refine((value) => value === null || /^\d{4}-\d{2}-\d{2}$/.test(value), {
-      message: "Expiry must be a real date.",
-    }),
-  contactName: z
-    .string()
-    .trim()
-    .max(100, "Contact name must be 100 characters or fewer.")
-    .default(""),
-  contactEmail: z
-    .string()
-    .trim()
-    .max(200, "Contact email must be 200 characters or fewer.")
-    .refine((value) => value === "" || z.email().safeParse(value).success, {
-      message: "Contact email must be a valid email address.",
-    })
-    .default(""),
-  contactPhone: z
-    .string()
-    .trim()
-    .max(50, "Contact phone must be 50 characters or fewer.")
-    .default(""),
-});
-
-export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
-
 /**
  * Admin emails are normalised here and again by a database trigger, so the
  * allowlist can never hold two spellings of the same address.

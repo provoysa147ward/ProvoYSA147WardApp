@@ -4,7 +4,6 @@ import {
   adminEmailSchema,
   groupSchema,
   quickLinkSchema,
-  siteSettingsSchema,
 } from "@/lib/validation/admin";
 
 describe("groupSchema", () => {
@@ -70,48 +69,6 @@ describe("quickLinkSchema", () => {
       expect(quickLinkSchema.safeParse(link({ url })).success).toBe(false);
     },
   );
-});
-
-describe("siteSettingsSchema", () => {
-  const settings = (overrides: Record<string, unknown> = {}) => ({
-    welcomeBlurb: "Welcome!",
-    sundayMeetingInfo: "Sundays at 9",
-    announcement: "",
-    announcementExpires: "",
-    contactName: "Ward Council",
-    contactEmail: "ward@example.com",
-    contactPhone: "(801) 555-0147",
-    ...overrides,
-  });
-
-  it("treats an empty announcement as valid — that is how the banner hides", () => {
-    const result = siteSettingsSchema.safeParse(settings({ announcement: "" }));
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.announcement).toBe("");
-  });
-
-  it("nulls an empty expiry date", () => {
-    const result = siteSettingsSchema.safeParse(settings());
-    expect(result.success).toBe(true);
-    if (result.success) expect(result.data.announcementExpires).toBeNull();
-  });
-
-  it("rejects a malformed expiry date", () => {
-    expect(
-      siteSettingsSchema.safeParse(settings({ announcementExpires: "soon" }))
-        .success,
-    ).toBe(false);
-  });
-
-  it("allows a blank contact email but rejects a malformed one", () => {
-    expect(
-      siteSettingsSchema.safeParse(settings({ contactEmail: "" })).success,
-    ).toBe(true);
-    expect(
-      siteSettingsSchema.safeParse(settings({ contactEmail: "not-an-email" }))
-        .success,
-    ).toBe(false);
-  });
 });
 
 describe("adminEmailSchema", () => {

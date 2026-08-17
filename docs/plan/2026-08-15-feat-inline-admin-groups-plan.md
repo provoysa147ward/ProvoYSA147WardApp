@@ -181,7 +181,7 @@ renders admin UI. No edit-mode framework, no client-side auth.
 
 ### Phase 2: Retire site settings, slim /admin to links + admins
 
-- **Status:** Not started
+- **Status:** Done
 - **Scope:** Site-settings text becomes constants; `/admin/content` is
   deleted; quick-links management moves onto the `/admin` dashboard;
   `site_settings` is dropped by migration; keepalive pings `groups`; db tests

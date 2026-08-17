@@ -28,16 +28,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // The publishable key, not the secret one: site_settings is world-readable,
-  // so this needs no privilege and the secret key keeps its single documented
+  // The publishable key, not the secret one: groups is world-readable, so this
+  // needs no privilege and the secret key keeps its single documented
   // pre-authentication use (the login allowlist check).
+  //
+  // Zero rows is a pass. The point is that Postgres answered at all — an empty
+  // groups table is a perfectly awake database.
   const { error } = await createClient(supabaseUrl(), supabasePublishableKey(), {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-    .from("site_settings")
+    .from("groups")
     .select("id")
-    .eq("id", 1)
-    .maybeSingle();
+    .limit(1);
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });

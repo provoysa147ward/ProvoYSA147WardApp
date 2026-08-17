@@ -63,9 +63,8 @@ describe("an admin hands over to their replacement", () => {
     const bAfter = await adminB.client.from("admin_emails").select("email");
     expect((bAfter.data ?? []).length).toBeGreaterThan(0);
 
-    // Prove it by doing admin work on a row this test owns, rather than by
-    // mutating the single shared site_settings row — which would leak into the
-    // seeded data every other suite reads.
+    // Prove it by doing admin work on a row this test owns and cleans up,
+    // rather than by editing seeded data every other suite reads.
     const bWrite = await adminB.client
       .from("quick_links")
       .insert({ label: "Turnover Proof", url: "https://example.com/turnover" })

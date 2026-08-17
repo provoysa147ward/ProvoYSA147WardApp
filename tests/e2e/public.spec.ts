@@ -11,7 +11,7 @@ import {
  * `playwright.config.ts`).
  */
 
-test("the home page shows the announcement and upcoming events", async ({
+test("the home page shows the welcome and upcoming events", async ({
   page,
 }) => {
   await page.goto("/");
@@ -19,7 +19,7 @@ test("the home page shows the announcement and upcoming events", async ({
   await expect(
     page.getByRole("heading", { name: "Provo YSA 147th Ward", level: 1 }),
   ).toBeVisible();
-  await expect(page.getByText(/Ward temple night/)).toBeVisible();
+  await expect(page.getByText(/where we keep track of what/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Coming up" })).toBeVisible();
   await expect(
     page.getByRole("link", { name: "See the calendar" }),

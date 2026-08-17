@@ -42,7 +42,7 @@ afterAll(async () => {
 });
 
 describe("public content tables", () => {
-  const tables = ["groups", "quick_links", "site_settings"] as const;
+  const tables = ["groups", "quick_links"] as const;
 
   it.each(tables)("lets anon read %s", async (table) => {
     const { error } = await anonClient().from(table).select("*").limit(1);
@@ -63,21 +63,27 @@ describe("public content tables", () => {
     expect(error).not.toBeNull();
   });
 
-  it("refuses a non-admin update to site_settings", async () => {
+  it("refuses a non-admin update to groups", async () => {
+    const { data: seeded } = await serviceClient()
+      .from("groups")
+      .select("id, name")
+      .limit(1)
+      .single();
+
     await member.client
-      .from("site_settings")
-      .update({ announcement: "Hijacked" })
-      .eq("id", 1);
+      .from("groups")
+      .update({ name: "Hijacked" })
+      .eq("id", seeded?.id);
 
     const { data } = await serviceClient()
-      .from("site_settings")
-      .select("announcement")
-      .eq("id", 1)
+      .from("groups")
+      .select("name")
+      .eq("id", seeded?.id)
       .single();
-    expect(data?.announcement).not.toBe("Hijacked");
+    expect(data?.name).toBe(seeded?.name);
   });
 
-  it("lets an admin write all three", async () => {
+  it("lets an admin write both", async () => {
     const group = await admin.client
       .from("groups")
       .insert({ name: "Admin Group", description: "Created in a test." })
@@ -92,33 +98,8 @@ describe("public content tables", () => {
       .single();
     expect(link.error).toBeNull();
 
-    // site_settings is a single shared row, so restore whatever was there
-    // rather than blanking it — the seeded announcement is dev data others use.
-    const { data: before } = await serviceClient()
-      .from("site_settings")
-      .select("announcement")
-      .eq("id", 1)
-      .single();
-
-    const settings = await admin.client
-      .from("site_settings")
-      .update({ announcement: "Set by an admin test." })
-      .eq("id", 1);
-    expect(settings.error).toBeNull();
-
     await serviceClient().from("groups").delete().eq("id", group.data?.id);
     await serviceClient().from("quick_links").delete().eq("id", link.data?.id);
-    await serviceClient()
-      .from("site_settings")
-      .update({ announcement: before?.announcement ?? "" })
-      .eq("id", 1);
-  });
-
-  it("enforces the single-row constraint on site_settings", async () => {
-    const { error } = await serviceClient()
-      .from("site_settings")
-      .insert({ id: 2 });
-    expect(error).not.toBeNull();
   });
 
   it("rejects a non-https quick link", async () => {
