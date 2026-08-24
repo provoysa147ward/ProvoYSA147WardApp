@@ -11,6 +11,16 @@ export const GROUPME_JOIN_URL =
   "https://groupme.com/join_group/96448094/VfvOov1r";
 
 /**
+ * The ward's new member survey (a Google Form).
+ *
+ * Lives here beside the GroupMe link because the two are the home page's pair
+ * of big front-door actions, and both are links the ward hands out rather than
+ * anything the site owns.
+ */
+export const SURVEY_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLScQFJDYdO7mUAunpvjbhH8c1AG3HHBuZLOdfeFobYnOkhIhbg/viewform";
+
+/**
  * The home page's fixed text.
  *
  * These used to be a database row with an admin screen in front of it, which
