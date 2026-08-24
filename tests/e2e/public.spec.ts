@@ -53,10 +53,11 @@ test("the home page leads with the GroupMe banner and the survey link", async ({
     await picture.evaluate((img: HTMLImageElement) => img.naturalWidth),
   ).toBeGreaterThan(0);
 
-  await page.getByRole("link", { name: "New Member Survey" }).click();
+  // The survey banner goes straight to the ward's Google Form rather than to
+  // an interstitial page of our own.
   await expect(
-    page.getByRole("heading", { name: "New Member Survey", level: 1 }),
-  ).toBeVisible();
+    page.getByRole("link", { name: /New Member Survey/ }),
+  ).toHaveAttribute("href", /docs\.google\.com\/forms\//);
 });
 
 test("the retired /submit route redirects to the home page", async ({

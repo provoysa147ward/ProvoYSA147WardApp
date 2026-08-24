@@ -18,6 +18,7 @@ import {
   ANNOUNCEMENT_EXPIRES,
   GROUPME_JOIN_URL,
   SUNDAY_MEETING_INFO,
+  SURVEY_URL,
   WELCOME_BLURB,
 } from "@/lib/site";
 
@@ -40,6 +41,8 @@ export default async function Home() {
 
       <GroupMeBanner />
 
+      <SurveyBanner />
+
       <section className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
           Provo YSA 147th Ward
@@ -55,9 +58,6 @@ export default async function Home() {
 
         <div className="flex flex-wrap gap-3">
           <ButtonLink href="/calendar">See the calendar</ButtonLink>
-          <ButtonLink href="/survey" variant="secondary">
-            New Member Survey
-          </ButtonLink>
         </div>
       </section>
 
@@ -161,6 +161,33 @@ function GroupMeBanner() {
         Join the Ward GroupMe
         <span className="sr-only"> (opens in a new tab)</span>
       </span>
+    </Link>
+  );
+}
+
+/**
+ * The second of the two front-door actions, sitting directly under the
+ * GroupMe card and matching its size so the pair reads as one block: join the
+ * chat, then tell us who you are.
+ *
+ * Points straight at the ward's Google Form rather than at `/survey`, because
+ * a page whose only content is a link to the form is a step that costs a tap
+ * and gives nothing back. `/survey` still exists for anyone who has the URL.
+ *
+ * Solid accent rather than the GroupMe card's own colours: it is the site
+ * speaking here, not GroupMe, and the contrast keeps the two from blurring
+ * into a single stripe.
+ */
+function SurveyBanner() {
+  return (
+    <Link
+      href={SURVEY_URL}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="flex w-full items-center justify-center rounded-2xl bg-accent px-6 py-8 text-center text-2xl font-bold tracking-tight text-cream transition hover:opacity-90 sm:px-10 sm:text-3xl"
+    >
+      New Member Survey
+      <span className="sr-only"> (opens in a new tab)</span>
     </Link>
   );
 }
