@@ -48,7 +48,7 @@ export function buildCalendarFixture(
       status: "confirmed",
       summary: FIXTURE_TITLES.sports,
       location: "Stake center gym",
-      colorId: "2", // Sage -> sports
+      colorId: "6", // Tangerine -> activity
       start: timed(day(1), "20:00"),
       end: timed(day(1), "22:00"),
     },
@@ -58,7 +58,7 @@ export function buildCalendarFixture(
       summary: FIXTURE_TITLES.social,
       location: "Ward building cultural hall",
       description: "Bring a side if you can.",
-      colorId: "4", // Flamingo -> social
+      colorId: "4", // Flamingo -> activity
       start: timed(day(2), "13:00"),
       end: timed(day(2), "15:00"),
       // None of this may reach the public site.
@@ -69,13 +69,13 @@ export function buildCalendarFixture(
       ],
     },
     {
-      id: "fixture-institute",
+      id: "fixture-fhe",
       status: "confirmed",
-      summary: "Institute Class",
+      summary: "Ward FHE",
       location: "Institute building, room 210",
       description:
         "<p>Doctrine and Covenants this semester.</p><p>Bring your <b>scriptures</b> &amp; a friend.</p>",
-      colorId: "1", // Lavender -> spiritual
+      colorId: "1", // Lavender -> FHE
       start: timed(day(3), "19:00"),
       end: timed(day(3), "20:30"),
     },
@@ -84,7 +84,7 @@ export function buildCalendarFixture(
       status: "confirmed",
       summary: FIXTURE_TITLES.allDay,
       location: "Provo City Center Temple",
-      colorId: "3", // Grape -> spiritual
+      colorId: "7", // Peacock -> temple
       start: { date: day(4) },
       end: { date: day(5) }, // Exclusive: a single day.
     },
@@ -94,7 +94,7 @@ export function buildCalendarFixture(
       summary: FIXTURE_TITLES.pastMidnight,
       location: "Apartment 12 clubhouse",
       description: "Runs past midnight — come whenever.",
-      colorId: "11", // Tomato -> social
+      colorId: "11", // Tomato -> activity
       start: timed(day(5), "21:30"),
       end: timed(day(6), "00:30"),
     },
@@ -103,7 +103,7 @@ export function buildCalendarFixture(
       status: "confirmed",
       summary: FIXTURE_TITLES.multiDay,
       location: "Aspen Grove",
-      colorId: "10", // Basil -> sports
+      colorId: "5", // Banana -> activity
       start: { date: day(6) },
       end: { date: day(9) }, // Exclusive: the 6th, 7th, and 8th.
     },
@@ -112,7 +112,7 @@ export function buildCalendarFixture(
       status: "confirmed",
       summary: FIXTURE_TITLES.beyondWeek,
       location: "Rock Canyon trailhead",
-      colorId: "7", // Peacock -> service
+      colorId: "2", // Sage -> service
       start: timed(day(9), "09:00"),
       // No end time at all, which Google allows.
     },

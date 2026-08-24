@@ -55,7 +55,7 @@ export function AdminListManager({
           {addState.status === "success" && addState.message ? (
             <p
               role="status"
-              className="rounded-xl border border-cat-sports-border bg-cat-sports-bg px-4 py-2 text-sm font-semibold text-cat-sports-fg"
+              className="rounded-xl border border-notice-border bg-notice-bg px-4 py-2 text-sm font-semibold text-notice-fg"
             >
               {addState.message}
             </p>
@@ -101,7 +101,7 @@ export function AdminListManager({
         {removeState.status === "success" && removeState.message ? (
           <p
             role="status"
-            className="rounded-xl border border-cat-sports-border bg-cat-sports-bg px-4 py-2 text-sm font-semibold text-cat-sports-fg"
+            className="rounded-xl border border-notice-border bg-notice-bg px-4 py-2 text-sm font-semibold text-notice-fg"
           >
             {removeState.message}
           </p>

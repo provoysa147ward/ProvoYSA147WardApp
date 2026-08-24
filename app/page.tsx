@@ -200,7 +200,7 @@ function Announcement() {
   if (ANNOUNCEMENT_EXPIRES && ANNOUNCEMENT_EXPIRES < wardToday()) return null;
 
   return (
-    <aside className="rounded-2xl border border-cat-social-border bg-cat-social-bg px-4 py-3 text-cat-social-fg">
+    <aside className="rounded-2xl border border-highlight-border bg-highlight-bg px-4 py-3 text-highlight-fg">
       <p className="font-semibold">
         <span className="sr-only">Announcement: </span>
         {announcement}

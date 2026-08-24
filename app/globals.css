@@ -31,25 +31,35 @@
   --color-groupme-fg: #222b31;
   --color-groupme-border: #b9c9d8;
 
-  --color-cat-sports-bg: #d4f0e0;
-  --color-cat-sports-fg: #0f5c3a;
-  --color-cat-sports-border: #a5ddc0;
+  --color-cat-fhe-bg: #e5ddf8;
+  --color-cat-fhe-fg: #4a3690;
+  --color-cat-fhe-border: #c3b4ec;
 
-  --color-cat-spiritual-bg: #e5ddf8;
-  --color-cat-spiritual-fg: #4a3690;
-  --color-cat-spiritual-border: #c3b4ec;
+  --color-cat-temple-bg: #d6e9fb;
+  --color-cat-temple-fg: #134d7d;
+  --color-cat-temple-border: #a8cdf0;
 
-  --color-cat-social-bg: #fde3d0;
-  --color-cat-social-fg: #8a4212;
-  --color-cat-social-border: #f5c3a1;
+  --color-cat-service-bg: #d4f0e0;
+  --color-cat-service-fg: #0f5c3a;
+  --color-cat-service-border: #a5ddc0;
 
-  --color-cat-service-bg: #d6e9fb;
-  --color-cat-service-fg: #134d7d;
-  --color-cat-service-border: #a8cdf0;
+  --color-cat-activity-bg: #fde3d0;
+  --color-cat-activity-fg: #8a4212;
+  --color-cat-activity-border: #f5c3a1;
 
-  --color-cat-other-bg: #ece5db;
-  --color-cat-other-fg: #57493a;
-  --color-cat-other-border: #d3c6b5;
+  /*
+   * Not categories: the green confirmation banners and the warm announcement
+   * strip. They wear the same two palettes the chips do, but they are spelled
+   * out separately on purpose — recolouring a category should not silently
+   * repaint every "you're signed in" notice on the site.
+   */
+  --color-notice-bg: #d4f0e0;
+  --color-notice-fg: #0f5c3a;
+  --color-notice-border: #a5ddc0;
+
+  --color-highlight-bg: #fde3d0;
+  --color-highlight-fg: #8a4212;
+  --color-highlight-border: #f5c3a1;
 
   /*
    * The calendar's month-grid breakpoint. Pinned explicitly (it matches
