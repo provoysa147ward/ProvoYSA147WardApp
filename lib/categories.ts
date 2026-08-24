@@ -13,24 +13,20 @@ export const EVENT_CATEGORIES = [
   "temple",
   "service",
   "activity",
+  "other",
 ] as const;
 
 export type EventCategory = (typeof EVENT_CATEGORIES)[number];
 
-/**
- * Where an event lands when nothing else claims it.
- *
- * There is no "Other" chip any more, so this has to be a real category rather
- * than a shrug — and most of what the ward puts on the calendar is an
- * activity, so an uncoloured event is far more often that than anything else.
- */
-export const DEFAULT_CATEGORY: EventCategory = "activity";
+/** Where an event lands when no colour claims it. */
+export const DEFAULT_CATEGORY: EventCategory = "other";
 
 export const CATEGORY_LABELS: Record<EventCategory, string> = {
   fhe: "FHE",
   temple: "Temple",
   service: "Service",
   activity: "Activity",
+  other: "Other",
 };
 
 /** Background, text, and border utilities for a category chip. */
@@ -40,18 +36,18 @@ export const CATEGORY_CHIP_CLASSES: Record<EventCategory, string> = {
   service: "bg-cat-service-bg text-cat-service-fg border-cat-service-border",
   activity:
     "bg-cat-activity-bg text-cat-activity-fg border-cat-activity-border",
+  other: "bg-cat-other-bg text-cat-other-fg border-cat-other-border",
 };
 
 /**
- * Google Calendar's eleven event colours, folded onto the ward's four chips by
+ * Google Calendar's eleven event colours, folded onto the ward's five chips by
  * hue, so the chip matches the colour a leader picked in Google: purples are
  * FHE, blues the temple, greens service, and every warm colour an activity.
  *
- * The mapping is documented for leaders in `docs/HANDOFF.md`. An uncoloured
- * event (Google omits `colorId` when the event uses the calendar's default
- * colour) lands on `DEFAULT_CATEGORY`, as does Graphite — the grey that means
- * "no particular kind" in Google has nowhere better to go now that the neutral
- * chip is gone.
+ * The mapping is documented for leaders in `docs/HANDOFF.md`. Graphite — the
+ * grey that means "no particular kind" in Google — gets the neutral chip, as
+ * does an uncoloured event (Google omits `colorId` when the event uses the
+ * calendar's default colour).
  */
 const GOOGLE_COLOR_CATEGORIES: Record<string, EventCategory> = {
   "1": "fhe", // Lavender
@@ -61,7 +57,7 @@ const GOOGLE_COLOR_CATEGORIES: Record<string, EventCategory> = {
   "5": "activity", // Banana
   "6": "activity", // Tangerine
   "7": "temple", // Peacock
-  "8": "activity", // Graphite
+  "8": "other", // Graphite
   "9": "temple", // Blueberry
   "10": "service", // Basil
   "11": "activity", // Tomato

@@ -207,8 +207,8 @@ describe("mapGoogleEvent", () => {
     expect(categoryFor("10")).toBe("service");
     expect(categoryFor("4")).toBe("activity");
     expect(categoryFor("11")).toBe("activity");
-    expect(categoryFor("8")).toBe("activity");
-    expect(categoryFor(null)).toBe("activity");
+    expect(categoryFor("8")).toBe("other");
+    expect(categoryFor(null)).toBe("other");
   });
 
   it("never surfaces who organised an event or who is coming", () => {

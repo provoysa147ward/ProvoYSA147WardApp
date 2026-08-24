@@ -47,6 +47,10 @@
   --color-cat-activity-fg: #8a4212;
   --color-cat-activity-border: #f5c3a1;
 
+  --color-cat-other-bg: #ece5db;
+  --color-cat-other-fg: #57493a;
+  --color-cat-other-border: #d3c6b5;
+
   /*
    * Not categories: the green confirmation banners and the warm announcement
    * strip. They wear the same two palettes the chips do, but they are spelled

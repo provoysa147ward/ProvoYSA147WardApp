@@ -66,7 +66,7 @@ describe("categoryFromGoogleColor", () => {
     expect(categoryFromGoogleColor("5")).toBe("activity"); // Banana
     expect(categoryFromGoogleColor("6")).toBe("activity"); // Tangerine
     expect(categoryFromGoogleColor("11")).toBe("activity"); // Tomato
-    expect(categoryFromGoogleColor("8")).toBe("activity"); // Graphite
+    expect(categoryFromGoogleColor("8")).toBe("other"); // Graphite
   });
 
   it("covers every colour Google can send", () => {

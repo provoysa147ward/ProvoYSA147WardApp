@@ -275,12 +275,10 @@ by Google, including a single moved or cancelled occurrence.
 | Peacock, Blueberry (blues) | Temple |
 | Sage, Basil (greens) | Service |
 | Flamingo, Banana, Tangerine, Tomato (warm) | Activity |
-| Graphite, or no colour set | Activity |
+| Graphite, or no colour set | Other |
 
-There are only these four chips, so everything lands on one of them. An
-uncoloured event is not broken — it is simply treated as an activity, which is
-what most of them are. If a temple trip or an FHE is showing up as an activity,
-it just needs its colour set in Google.
+An uncoloured event is not broken — it just gets the neutral chip. If an FHE or
+a temple trip is showing up as "Other", it only needs its colour set in Google.
 
 **The calendar is public.** Everything typed into an event — title, location,
 description — appears on the public site, so keep phone numbers and private
