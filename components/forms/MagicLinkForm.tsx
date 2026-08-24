@@ -23,7 +23,7 @@ export function MagicLinkForm({ initialEmail = "" }: { initialEmail?: string }) 
     return (
       <div
         role="status"
-        className="rounded-2xl border border-cat-sports-border bg-cat-sports-bg p-5 text-cat-sports-fg"
+        className="rounded-2xl border border-notice-border bg-notice-bg p-5 text-notice-fg"
       >
         <h2 className="font-bold">Check your email</h2>
         <p className="mt-1 text-sm">

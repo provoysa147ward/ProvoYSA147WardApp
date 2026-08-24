@@ -271,13 +271,14 @@ by Google, including a single moved or cancelled occurrence.
 
 | Colour in Google Calendar | Chip on the site |
 |---|---|
-| Sage, Basil (greens) | Sports |
-| Lavender, Grape (purples) | Spiritual |
-| Flamingo, Banana, Tangerine, Tomato (warm) | Social |
-| Peacock, Blueberry (blues) | Service |
+| Lavender, Grape (purples) | FHE |
+| Peacock, Blueberry (blues) | Temple |
+| Sage, Basil (greens) | Service |
+| Flamingo, Banana, Tangerine, Tomato (warm) | Activity |
 | Graphite, or no colour set | Other |
 
-An uncoloured event is not broken — it just gets the neutral chip.
+An uncoloured event is not broken — it just gets the neutral chip. If an FHE or
+a temple trip is showing up as "Other", it only needs its colour set in Google.
 
 **The calendar is public.** Everything typed into an event — title, location,
 description — appears on the public site, so keep phone numbers and private

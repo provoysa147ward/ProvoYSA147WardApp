@@ -14,7 +14,7 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
   return {
     id: "event-1",
     title: "Volleyball",
-    category: "sports",
+    category: "activity",
     eventDate: TODAY,
     startTime: "20:00",
     endTime: "22:00",
@@ -30,7 +30,7 @@ const EVENTS: WardEvent[] = [
   makeEvent({
     id: "event-2",
     title: "Temple night",
-    category: "spiritual",
+    category: "temple",
     eventDate: "2026-08-20",
   }),
   makeEvent({

@@ -46,26 +46,26 @@ describe("isEventCategory", () => {
 
 describe("categoryLabel", () => {
   it("returns the label for a known category", () => {
-    expect(categoryLabel("spiritual")).toBe("Spiritual");
+    expect(categoryLabel("temple")).toBe("Temple");
   });
 
   it("falls back to the default label for unknown data", () => {
-    expect(categoryLabel("dance")).toBe(CATEGORY_LABELS[DEFAULT_CATEGORY]);
+    expect(categoryLabel("sports")).toBe(CATEGORY_LABELS[DEFAULT_CATEGORY]);
   });
 });
 
 describe("categoryFromGoogleColor", () => {
   it("folds each Google colour onto a chip by hue", () => {
-    expect(categoryFromGoogleColor("2")).toBe("sports"); // Sage
-    expect(categoryFromGoogleColor("10")).toBe("sports"); // Basil
-    expect(categoryFromGoogleColor("1")).toBe("spiritual"); // Lavender
-    expect(categoryFromGoogleColor("3")).toBe("spiritual"); // Grape
-    expect(categoryFromGoogleColor("4")).toBe("social"); // Flamingo
-    expect(categoryFromGoogleColor("5")).toBe("social"); // Banana
-    expect(categoryFromGoogleColor("6")).toBe("social"); // Tangerine
-    expect(categoryFromGoogleColor("11")).toBe("social"); // Tomato
-    expect(categoryFromGoogleColor("7")).toBe("service"); // Peacock
-    expect(categoryFromGoogleColor("9")).toBe("service"); // Blueberry
+    expect(categoryFromGoogleColor("1")).toBe("fhe"); // Lavender
+    expect(categoryFromGoogleColor("3")).toBe("fhe"); // Grape
+    expect(categoryFromGoogleColor("7")).toBe("temple"); // Peacock
+    expect(categoryFromGoogleColor("9")).toBe("temple"); // Blueberry
+    expect(categoryFromGoogleColor("2")).toBe("service"); // Sage
+    expect(categoryFromGoogleColor("10")).toBe("service"); // Basil
+    expect(categoryFromGoogleColor("4")).toBe("activity"); // Flamingo
+    expect(categoryFromGoogleColor("5")).toBe("activity"); // Banana
+    expect(categoryFromGoogleColor("6")).toBe("activity"); // Tangerine
+    expect(categoryFromGoogleColor("11")).toBe("activity"); // Tomato
     expect(categoryFromGoogleColor("8")).toBe("other"); // Graphite
   });
 

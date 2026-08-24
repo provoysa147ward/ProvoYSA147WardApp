@@ -21,7 +21,7 @@ function makeEvent(overrides: Partial<WardEvent> = {}): WardEvent {
   return {
     id: "event-1",
     title: "Break the Fast",
-    category: "social",
+    category: "activity",
     eventDate: "2026-08-09",
     startTime: "13:00",
     endTime: "15:00",

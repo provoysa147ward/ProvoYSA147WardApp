@@ -26,7 +26,7 @@ const { getCalendarEvents } = await import("@/lib/queries");
 const EVENT: WardEvent = {
   id: "event-1",
   title: "Volleyball",
-  category: "sports",
+  category: "activity",
   eventDate: "2026-08-19",
   startTime: "20:00",
   endTime: "22:00",

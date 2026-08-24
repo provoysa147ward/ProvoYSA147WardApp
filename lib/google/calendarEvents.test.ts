@@ -32,7 +32,7 @@ function timedEvent(
     summary: "Volleyball",
     location: "Stake center gym",
     description: "Bring water.",
-    colorId: "2",
+    colorId: "6", // Tangerine -> activity
     start: { dateTime: "2026-08-19T20:00:00-06:00", timeZone: "America/Denver" },
     end: { dateTime: "2026-08-19T22:00:00-06:00", timeZone: "America/Denver" },
     ...overrides,
@@ -45,7 +45,7 @@ describe("mapGoogleEvent", () => {
       {
         id: "event-1",
         title: "Volleyball",
-        category: "sports",
+        category: "activity",
         eventDate: "2026-08-19",
         startTime: "20:00",
         endTime: "22:00",
@@ -199,14 +199,14 @@ describe("mapGoogleEvent", () => {
     const categoryFor = (colorId: string | null) =>
       mapGoogleEvent(timedEvent({ colorId }))[0].category;
 
-    expect(categoryFor("2")).toBe("sports");
-    expect(categoryFor("10")).toBe("sports");
-    expect(categoryFor("1")).toBe("spiritual");
-    expect(categoryFor("3")).toBe("spiritual");
-    expect(categoryFor("4")).toBe("social");
-    expect(categoryFor("11")).toBe("social");
-    expect(categoryFor("7")).toBe("service");
-    expect(categoryFor("9")).toBe("service");
+    expect(categoryFor("1")).toBe("fhe");
+    expect(categoryFor("3")).toBe("fhe");
+    expect(categoryFor("7")).toBe("temple");
+    expect(categoryFor("9")).toBe("temple");
+    expect(categoryFor("2")).toBe("service");
+    expect(categoryFor("10")).toBe("service");
+    expect(categoryFor("4")).toBe("activity");
+    expect(categoryFor("11")).toBe("activity");
     expect(categoryFor("8")).toBe("other");
     expect(categoryFor(null)).toBe("other");
   });

@@ -14,7 +14,7 @@ export function Banner({ state }: { state: AdminActionState }) {
     return (
       <p
         role="status"
-        className="rounded-xl border border-cat-sports-border bg-cat-sports-bg px-4 py-2 text-sm font-semibold text-cat-sports-fg"
+        className="rounded-xl border border-notice-border bg-notice-bg px-4 py-2 text-sm font-semibold text-notice-fg"
       >
         {state.message}
       </p>
