@@ -57,6 +57,9 @@ export default defineConfig({
 
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 
+  // Runs once the server below is up, and checks it is actually that server.
+  globalSetup: "./tests/e2e/globalSetup.ts",
+
   webServer: {
     command: "npm run build && npm run start",
     url: BASE_URL,
